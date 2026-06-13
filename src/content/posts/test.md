@@ -1,3 +1,12 @@
+---
+title: 测试文章
+published: 2026/06/14
+pinned: false
+description: 这是一个测试文章。
+draft: false
+---
+
+
 # 欢迎使用 Markdown 编辑器
 
 这是一个 **完全在浏览器本地** 运行的 Markdown 编辑器：左侧编辑、右侧实时预览，草稿自动保存到 localStorage。
