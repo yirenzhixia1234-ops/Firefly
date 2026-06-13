@@ -34,7 +34,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	});
 
 	// 友链
-	links.push(LinkPresets.Friends);
+	// links.push(LinkPresets.Friends);
 
 	// 留言板
 	links.push(LinkPresets.Guestbook);
@@ -142,11 +142,11 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		url: "/tags/",
 		icon: "material-symbols:tag-rounded",
 	},
-	// Friends: {
-	// 	name: "友链",
-	// 	url: "/friends/",
-	// 	icon: "material-symbols:group",
-	// },
+	Friends: {
+		name: "友链",
+		url: "/friends/",
+		icon: "material-symbols:group",
+	},
 	Sponsor: {
 		name: "赞助",
 		url: "/sponsor/",
