@@ -66,8 +66,35 @@ public class Person
 ## 构造函数 析构函数 垃圾回收
 
 ### 构造函数
-概念：在实例化对象时，自动调用的特殊方法，用来初始化对象的属性。（如果不写构造函数，默认会有一个无参数的构造函数）  
-⚠ 注意：如果不自己实现无参构造函数而自己实现了有参构造函数，那么默认的无参构造函数就会被隐藏。
+概念：在实例化对象时，自动调用的特殊方法，用来初始化对象的属性。（如果不写构造函数，默认会有一个无参数的构造函数，构造函数一般是public的）  
+==注意==：如果不自己实现无参构造函数而自己实现了有参构造函数，那么默认的无参构造函数就会被隐藏。
+
+实例：
+```csharp
+// 定义一个类
+public class Person
+{
+    public string Name { get; set; }
+    public int Age { get; set; }
+    // 无参构造函数
+    public Person()
+    {
+        Name = "默认姓名";
+        Age = 0;
+    }
+    // 有参构造函数
+    public Person(string name)
+    {
+        Name = name;
+    }
+    //通过this关键字调用其他构造函数
+    public Person(string name, int age) : this(name)
+    {
+        Age = age;
+    }
+}
+```
+
 
 ### 析构函数
 概念：在对象被销毁时，自动调用的特殊方法，用来释放对象占用的资源。（如果不写析构函数，默认会有一个无参数的析构函数），对于需要手动管理内存的语言（如C++）,需要在析构函数中做一些内存回收处理，但是在C#中存在自动垃圾回收机制GC,所以我们几乎不会怎么使用析构函数，除非你想在某一个对象被垃圾回收时做一些特殊处理。   
@@ -175,7 +202,7 @@ int score = p[0];
 Console.WriteLine(score);
 ```  
 
-索引器的重载：
+索引器的重载：  
 ``` csharp  
 public class Person
 {
@@ -192,7 +219,396 @@ public class Person
         set;
     }
 }
+```  
+
+## 静态成员 
+
+概念：静态成员是指在类的定义中，没有被实例化，而是直接通过类名来访问的成员。用static关键字来修饰。  
+``` csharp  
+public class Person
+{
+    // 静态成员
+    public static int Count = 0;
+    //成员变量
+    private string name;
+}
+```  
+
+静态成员被分配在静态内存中，静态内存是程序启动时分配的，程序结束时释放。
+
+const和static的区别：  
+1.const和static都是静态成员，但是const是常量，static是变量。  
+2.const只能在编译时确定，static可以在运行时确定。  
+3.const只能在类中使用，static可以在类中和方法中使用。
+
+## 静态类和静态构造函数 
+
+### 静态类  
+
+概念：静态类是指在类的定义中，没有被实例化，而是直接通过类名来访问的类。用static关键字来修饰。  
+``` csharp  
+public static class Math
+{
+    public static int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+```  
+静态类只能包含静态成员，静态类不能被实例化  
+
+作用：  
+1.将常用的静态成员写在静态类中方便使用
+2.静态类不能被实例化，更能体现工具类的唯一性    
+
+    
+### 静态构造函数  
+
+概念：静态构造函数是指在类的定义中，没有被实例化，而是直接通过类名来访问的构造函数。用static关键字来修饰。  
+
+特点：  
+1.静态类和普通类都可以有    
+2.不能使用访问修饰符  
+3.不能有参数    
+4.只会自动调用一次  
+
+作用：在静态类中初始化==静态成员==，或者在静态类中执行一些静态操作。  
+
+静态类中的静态构造函数：  
+``` csharp  
+public static class Math
+{
+    public static int Count ;
+    // 静态构造函数
+    static Math()
+    {
+        // 初始化静态成员
+        Count = 0;
+    }
+
+    public static int Add(int a, int b)
+    {
+        return a + b;
+    }
+}
+```     
+
+普通类中的静态构造函数：  
+``` csharp  
+public class Person
+{
+    // 静态构造函数
+    static Person()
+    {
+        // 初始化静态成员
+        Count = 0;
+    }
+    public static int Count = 0;
+}
+```     
+
+## 拓展方法 
+概念：为现有非静态变量类型添加新方法    
+
+作用：  
+1.提升程序拓展性
+2.不需要再在对象中重新写方法    
+3.不需要继承来添加方法  
+4.为别人封装的类型写额外的方法  
+
+特点：  
+1.一定是写在静态类中
+2.一定是静态函数    
+3.第一个参数为拓展目标  
+4.第一个参数用this修饰  
+
+基本语法：  
+``` csharp  
+//访问修饰符  static  返回值  函数名(this  拓展类名  参数名，参数类型  参数名，参数类型  参数名)
+```  
+
+例如：  
+``` csharp  
+public static class Tool
+{
+    //相当于给Person类添加了一个方法GetAge
+    public static int GetAge(this Person p)
+    {
+        return p.Age;
+    }
+}
+``` 
+
+## 运算符重载   
+
+概念：让自定义类和结构体能够使用运算符  
+
+关键字：operator  
+
+特点：  
+1.一定是一个公共的静态方法  
+2.返回值写在operator之前    
+3.逻辑处理自定义    
+
+作用：让自定义类和结构体对象可以进行运算    
+
+注意：  
+1.条件运算需要成对实现  
+2.一个符号可以多个重载  
+3.不能用ref和out    
+
+基本语法：  
+``` csharp  
+//public static 返回类型 operator 运算符(参数类型  参数名，参数类型  参数名)
+```  
+
+实例：
+``` csharp  
+public class Point
+{
+    public int X;
+    public int Y;
+    public Point(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public static Point operator +(Point p1, Point p2)
+    {
+        return new Point(p1.X + p2.X, p1.Y + p2.Y);
+    }
+
+    //重载
+    public static Point operator +(Point p1, int value)
+    {
+        return new Point(p1.X + value, p1.Y + value);
+    }
+}   
+``` 
+
+## 内部类和分部类   
+
+### 内部类  
+
+概念：内部类是指在类的定义中，嵌套了一个类。用class关键字来修饰。  
+
+特点：  
+1.内部类只能在外部类中实例化  
+2.内部类可以访问外部类的成员  
+3.内部类可以作为外部类的嵌套类型  
+
+==注意== 访问修饰符作用很大，不能省略。 
+
+实例：  
+``` csharp  
+public class Person
+{
+    public int Age;
+    public class Inner
+    {
+        public int Count = 0;
+    }
+}
+```  
+
+### 分部类  
+
+概念：分部类是指在类的定义中，将类的定义分成多个文件。用partial关键字来修饰。  
+
+特点：  
+1.分部类可以包含多个文件  
+2.每个文件只能包含一个类  
+3.每个文件的类名必须相同  
+4.分部类中不能有相同的成员  
+
+实例：  
+``` csharp  
+//在Person.cs文件中定义
+public partial class Person
+{
+    public int Age;
+}
 ```
+
+``` csharp  
+//在Person2.cs文件中定义
+public partial class Person
+{
+    public int Count;
+}
+``` 
+
+## 继承 
+概念：一个类A可以继承另一个类B，B被称为基类，A被称为派生类。类A可以访问基类的成员。类A将拥有类B的所有特征和行为。类A可以有自己的特征和行为。    
+
+特点：  
+1.单根性 子类只能有一个父类 
+2.传递性 子类可以简介继承父类的父类 
+
+语法：  
+``` csharp  
+//派生类
+public class Child : Parent
+{
+    // 子类的成员
+    public int ChildAge;
+}
+```  
+
+## 里氏替换原则       
+
+概念：任何父类都可以被子类替换，而程序的正确性不会受到影响。父类容器可以存储子类对象，而不会出现错误。    
+
+作用：方便进行对象的存储和管理。    
+
+实例：
+``` csharp  
+public class GameObject
+{
+
+}
+
+public class Preson:GameObject
+{
+    public void Move();
+}
+
+public class Monster:GameObject
+{
+    public void Attack();
+}
+
+public class Program
+{
+    public static void Main()
+    {
+        //父类容器可以存储子类对象的表现
+        GameObject person = new Preson();
+        GameObject monster = new Monster();
+        GameObject[] objects = new GameObject[] {new Preson(), new Monster()};
+
+        //通过is运算符判断对象是否是子类对象
+        if(person is Preson)
+        {
+            //如果是子类对象，就可以调用子类的方法
+            //as：将一个对象转换成指定类对象 如果成功则返回指定类对象，失败则返回null
+            (person as Preson).Move();
+        }
+
+        if(monster is Monster)
+        {
+            (monster as Monster).Attack();
+        }
+
+        //当父类容器中存储多个子类对象时，需要根据对象的类型来调用不同的方法，常见于背包管理中
+        if(objects[0] is Preson)
+        {
+            (objects[0] as Preson).Move();
+        }
+        else if(objects[0] is Monster)
+        {
+            (objects[0] as Monster).Attack();
+        }
+    }
+}
+``` 
+
+## 继承中的构造函数 
+特点：
+1.当申明一个子类对象时，先执行父类的构造函数，再执行子类的构造函数。
+==注意== ：
+1.父类的无参构造很重要，因为子类实例化时默认是调用父类的无参构造函数。
+实例：
+```csharp
+public class Person
+{
+    public int Age;
+    public Person(int age)
+    {
+        Age = age;
+    }
+}
+
+//若此时父类的无参构造函数被顶替掉时子类在实例化时会报错
+public class Student:Person //此时会报错
+{
+
+}
+``` 
+
+2.子类可以通过base关键字代表父类 调用父类的构造函数。   
+实例：
+```csharp
+public class Student:Person
+{
+    public Student(int age) : base(age) //这样就不会报错了
+    {
+    }
+}
+```     
+
+## 万物之父和装箱拆箱
+
+### 万物之父
+
+概念：object类是所有类的基类，所有的类都是object类的子类。object类的所有方法都可以被其他类调用。
+作用：  
+1.可以利用里氏替换原则，用object类来存储所有类型的对象  
+2.可以用来表示不确定类型，作为函数参数类型  
+
+实例：
+```csharp
+public class Program
+{
+    public static void Main()
+    {
+        //object类可以存储所有类型的对象
+        object obj = new int();
+        obj = new string();
+        obj = new bool();
+
+        //引用类型转换
+        object str = "hello";
+        string str2 = str as string;
+
+        //值类型转换（强转）
+        int num = 10;
+        object numObj = num;
+        int num2 = (int)numObj;
+    }
+}
+``` 
+
+### 装箱拆箱    
+
+发生条件：用object存==值类型==时（装箱） 再把object转换成==值类型==时（拆箱）   
+
+装箱：把值类型用引用类型来存储，栈内存会迁移到堆内存中  
+
+拆箱：把引用类型存储的值类型取出来，堆内存会迁移到栈内存中  
+
+装箱和拆箱存在内存迁移，增加性能损耗    
+
+## 密封类
+
+概念：密封类不能被继承，只能被实例化。密封类的成员只能在密封类中被访问，不能在子类中被访问。    
+
+关键字：sealed   
+
+实例：
+```csharp
+//在加上sealed关键字后，Person类就不能被继承了
+sealed public class Person
+{
+
+}
+```
+
+
+
+
+
 
 
 
