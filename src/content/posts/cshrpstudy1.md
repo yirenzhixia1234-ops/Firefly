@@ -604,6 +604,423 @@ sealed public class Person
 
 }
 ```
+## 多态vob  
+
+概念：让继承同一父类的子类们 在执行相同方法时有不同的表现（状态） 
+
+目的：同一父类对象 执行相同行为（方法）有不同的表现 
+
+解决的问题：让同一个对象有唯一行为的特征    
+
+### 虚函数
+
+概念：在父类中定义的方法，子类可以重写。子类重写的方法，就叫虚函数。
+
+实例：  
+```csharp
+public class GameObject
+{
+    public virtual void Move()
+    {
+        Console.WriteLine("移动");
+    }
+}
+
+public class Preson:GameObject
+{
+    //子类重写父类的方法，就叫重写虚函数
+    //重写虚函数时，需要在方法前添加override关键字
+    public override void Move()
+    {
+        //base的作用：代表父类，通过base来保留父类的行为
+        base.Move();
+        Console.WriteLine("人移动");
+    }
+}
+```     
+
+## 抽象类和抽象函数 
+
+概念：被abstract关键字修饰的类，就叫抽象类。抽象类不能被实例化，只能被继承。
+
+实例：
+```csharp
+public abstract class GameObject
+{
+    //抽象方法不能有方法体，只能在子类中实现
+    public abstract void Move();
+}
+
+public class Preson:GameObject
+{
+    public override void Move()
+    {
+        Console.WriteLine("人移动");
+    }
+}
+``` 
+
+虚方法是可以由子类选择性实现的      
+抽象方法必须要实现  
+不希望被实例化的类，相对比较抽象的类可以使用抽象类  
+父类中的行为不太需要被实现的，只希望子类去定义具体的规则的 可以选择抽象类然后使用其中的抽象方法
+
+## 接口
+
+概念：被interface关键字修饰的类，就叫接口。接口不能被实例化，只能被实现。
+
+接口申明的规范：
+1.不包含成员变量
+2.只包含方法、属性、索引器、事件    
+3.成员不能被实现  
+4.成员可以不用写访问修饰符，不能是私有的    
+5.接口不能继承类，但是可以继承另一个接口    
+
+接口的使用规范：
+1.类可以继承多个接口  
+2.类继承接口后，必须实现接口中的所有成员    
+
+特点：
+1.他和类的申明类似      
+2.接口是拿来继承的  
+3.接口不能被实例化，但是可以作为容器存储对象
+
+接口的申明：
+```csharp   
+public interface IGameObject
+{
+    void Move();
+
+    string Name { get; set; }
+
+    int this[int index] { get; set; }
+
+    public event Action OnMove;
+}
+``` 
+
+接口的使用：    
+1.类只能继承一个类，但是可以实现多个接口    
+2.类实现接口后，必须实现接口中的所有成员    并且必须是public的  
+3.实现的接口函数可以加virtual关键字在子类重写   
+4.接口也遵循里氏替换原则    
+
+
+实例：
+```csharp
+public class GameObject:IGameObject
+{
+    public void Move()
+    {
+        Console.WriteLine("移动");
+    }
+    public string Name { get; set; } = "游戏对象";
+    public int this[int index] { get; set; } = 0;
+    public event Action OnMove;
+    public void OnMove()
+    {
+        OnMove?.Invoke();
+    }
+}
+``` 
+
+接口可以继承接口  接口继承接口时不需要实现，待类继承接口后自己去实现所有内容    
+
+显示实现接口：
+当一个类实现了多个接口，且接口中包含相同的方法时，需要在类中显示实现接口的方法。
+
+实例：
+```csharp
+interface IAtk
+{
+    void Attack();
+}
+
+interface ISuperAtk
+{
+    void Attack();
+}
+
+class Person:IAtk,ISuperAtk
+{
+    //显示实现接口就是用接口名.方法名() 去实现
+    void IAtk.Attack()
+    {
+        Console.WriteLine("普通攻击");
+    }
+    void ISuperAtk.Attack()
+    {
+        Console.WriteLine("超级攻击");
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Person p = new Person();
+        //调用普通攻击方法
+        (p as IAtk).Attack();
+        //调用超级攻击方法
+        (p as ISuperAtk).Attack();
+    }
+}
+``` 
+
+## 密封方法 
+
+概念：被sealed关键字修饰的方法，就叫密封方法。让虚方法或者抽象方法不能被子类重写。
+
+## 命名空间 
+
+概念：命名空间是用来组织和重构代码的。  
+
+命名空间的使用：
+基本语法：
+```csharp
+namespace 命名空间名
+{
+    //命名空间中的代码
+    //类、结构、枚举、委托、接口等
+}
+```     
+同一命名空间不允许有相同的类名。
+
+实例：
+```csharp
+namespace MyGame
+{
+    public class GameObject
+    {
+
+    }
+}
+
+//相同命名空间的类可以互相使用  
+namespace MyGame
+{
+    public class Preson:GameObject
+    {
+
+    }
+}
+
+//若是不同命名空间的类，需要使用using关键字来引入命名空间
+using MyGame;
+
+namespace MyGame2
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //添加了using关键字后，就可以直接使用MyGame命名空间中的类
+            GameObject g = new GameObject();
+            //或者MyGame.Peson p = new MyGame.Peson(); 也可以使用
+        }
+    }
+}
+``` 
+
+不同命名空间中允许有相同的类名。但需要引用必须指明出处。    
+
+命名空间可以包裹其他命名空间。
+
+internal命名空间：只能在当前程序集中使用。
+
+## 万物之父中的方法 
+
+```csharp
+public class Object
+{
+    //静态方法
+    public static bool Equals(object obj,object obj2); //判断两个对象是否相等
+    public static bool ReferenceEquals(object obj,object obj2); //判断两个对象是否引用同一个对象   如果传入的是值对象则始终返回false   
+
+    //成员方法
+    public Type GetType(); //获取对象的类型   
+    protected object MemberwiseClone(); //获取对象的浅拷贝对象  浅拷贝会返回一个新的对象 但是新对象中的引用变量会和原对象中的引用变量指向同一个对象    
+
+    //虚方法
+    public virtual string ToString(); //返回对象的字符串表示  
+    public virtual bool Equals(object obj); //默认实现还是比较两者是否为同一引用  但微软在System.ValueType中重写了这个方法，用来比较值是否相等
+    public virtual int GetHashCode(); //返回对象的哈希码  重写时一般返回对象的成员变量的哈希码的组合
+
+}
+``` 
+
+## string  
+
+==注意== string类型虽然是引用类型 但是当字符串被重新赋值时  会创建一个新的字符串对象  而不是修改原字符串    
+例如：
+```csharp
+string str = "1313333";
+str = "4444444"; //会创建一个新的字符串对象  而不是修改原字符
+//所以频繁的修改字符串时  会消耗大量的内存空间
+``` 
+
+string类的方法：
+
+```csharp
+//字符串指定位置获取
+string str = "1313333";
+char c = str[0]; //获取字符串的第一个字符 是用string类中的索引器实现的
+
+//字符串转char数组
+char[] arr = str.ToCharArray();
+
+//字符串拼接
+string str2 = str + "123"; 
+string str3 = string.Format("{0}{1}",str,"123"); //用Format方法拼接字符串  可以用{0}、{1}等占位符来表示参数的顺序
+
+//字符串正向查找字符位置    
+int index = str.IndexOf("313"); //返回字符串中第一个字符的索引  如果没有则返回-1
+
+//反向查找字符位置    
+int index2 = str.LastIndexOf("313"); //返回字符串中最后一个字符的索引  如果没有则返回-1
+
+//移除指定位置后的字符
+string str4 = str.Remove(index,3); //从索引为index开始移除3个字符 并不会改变原字符串
+
+//替换指定字符串
+string str5 = str.Replace("313","123"); //将字符串中的313替换为123 并不会改变原字符串
+
+//大小写转换  并不会改变原字符串
+string str6 = str.ToLower(); //将字符串转换为小写
+string str7 = str.ToUpper(); //将字符串转换为大写
+
+//字符串截取  并不会改变原字符串
+string str8 = str.Substring(index,3); //从索引为index开始截取3个字符  参数一为开始索引  参数二为截取的字符数 若索引超出范围则会报错
+
+//字符串切割  并不会改变原字符串
+string[] str9 = str.Split("313"); //将字符串按313切割  返回一个字符串数组
+
+//编写一个函数，将输入的字符串反转，不要使用中间商，你必须原地修改输入数组，交换过程中不使用额外空间
+//用双指针+XOR异或交换字符
+void ReverseString(char[] s)
+{
+    int left = 0;
+    int right = s.Length - 1;
+    while (left < right)
+    {
+        s[left] ^= s[right];
+        s[right] ^= s[left];
+        s[left] ^= s[right];
+        left++;
+        right--;
+    }
+}
+``` 
+
+## StringBuilder
+
+可以解决频繁修改字符串时  内存空间浪费的问题  使用前需引用System.Text命名空间
+
+初始化：
+```csharp
+StringBuilder sb = new StringBuilder("1313333");
+
+//StringBuilder存在容量的问题 每次往里面增加时会自动扩容
+//获得容量
+int capacity = sb.Capacity;
+//获得字符串长度
+int length = sb.Length;
+
+//增加字符
+sb.Append("123");
+sb.AppendFormat("{0}",123);
+
+//插入
+sb.Insert(index,"123");
+
+//删除
+sb.Remove(index,3);
+
+//清空
+sb.Clear();
+
+//查
+Console.WriteLine(sb[1]);
+
+//改
+sb[1] = '4';
+
+//替换
+sb.Replace("313","12313"); //会修改原字符串 不会产生垃圾
+
+//修改
+sb.Clear();
+sb.Append("123");
+
+``` 
+
+## 结构体和类的区别
+
+结构体和类的最大区别是存储空间的区别，结构体是值类型，类是引用类型。他们的存储位置一个在栈上一个在堆上  
+
+结构体和类在使用上很相似，结构体甚至可以用面向对象的思想来形容一类对象。结构体具备面向对象思想中封装的特性，但是他不具备继承和多态的特性，因此大大减少了他的使用频率。
+由于结构体不具备继承的特性，所以它不能用protected来修饰成员变量 
+
+细节区别：
+1.结构体是值类型，类是引用类型  
+2.结构体存在栈中，类存在堆中    
+3.结构体成员不能使用protected访问修饰符，而类可以   
+4.结构体成员变量申明不能指定初始值，而类可以    
+5.结构体不能申明无参的构造函数，而类可以    
+6.结构体申明有参构造函数后，无参构造不会被顶掉  
+7.结构体不能申明析构函数，而类可以  
+8.结构体不能被继承，而类可以    
+9.结构体需要在构造函数中初始化所有成员变量，而类随意    
+10.结构体不能被静态static修饰（不存在静态结构体），而类可以 
+11.结构体不能在自己内部申明和自已一样的结构体变量，而类可以     
+
+但结构体可以实现接口    
+
+如何选择结构体和类：    
+1.想要用继承和多态时，直接淘汰结构体，比如玩家、怪物等等
+2.对象是数据集合时，优先考虑结构体，比如位置、坐标等等
+3.从值类型和引用类型赋值时的区别上去考虑，比如经常被赋值传递的对象，并且改变赋值对象，原对象不想跟着变化时，就用结构体。比如坐标、向量、旋转等等
+
+## 抽象类和接口的区别   
+
+区别：
+1.抽象类中可以有构造函数；接口中不能    
+2.抽象类只能被单一继承；接口可以被继承多个  
+3.抽象类中可以有成员变量；接口中不能    
+4.抽象类中可以申明成员方法，虚方法，抽象方法，静态方法：接口中只能申明没有实现的抽象方法    
+5.抽象类方法可以使用访问修饰符；接口中建议不写，默认public      
+
+如何选择抽象类和接口：  
+表示对象的用抽象类，表示行为拓展的用接口    
+不同对象拥有的共同行为，我们往往可以使用接口来实现  
+举个例子：  
+动物是一类对象，我们自然会选择抽象类：而飞翔是一个行为，我们自然会选择接口。    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
