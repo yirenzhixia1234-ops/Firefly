@@ -143,9 +143,290 @@ int j = (int)arrayList[0]; //拆箱
 
 ## Stack  
 
-Stack的本质：
-Stack（栈）是一个c#为我们封装好的类 
-它的本质也是object[]数组，只是封装了特殊的存储规则  
-Stack是栈存储容器，栈是一种先进后出的数据结构   
+### Stack的本质：   
+Stack（栈）是一个c#为我们封装好的类     
+它的本质也是object[]数组，只是封装了特殊的存储规则      
+Stack是栈存储容器，栈是一种先进后出的数据结构       
 先存入的数据后获取，后存入的数据先获取  
 栈是先进后出    
+
+申明：
+```csharp
+Stack stack = new Stack<int>();  //也要引用System.Collections命名空间
+```
+
+增：
+```csharp
+//只能一个一个的存入
+stack.Push(1);
+//和ArrayList一样可以存储不同类型的数据 本质都是object[]数组
+stack.Push("hello");
+stack.Push(3.14);
+```
+
+取：   
+```csharp
+//只能一个一个的取
+int i = stack.Pop();
+```
+
+查：
+```csharp
+//栈无法查看指定位置的元素只能查看栈顶的元素
+int top = stack.Peek();
+
+//查找指定元素是否存在
+bool isExist = stack.Contains(1);
+``` 
+
+改：
+```csharp
+stack.Clear();
+```
+
+遍历：
+```csharp
+//用foreach遍历栈 顺序由栈顶到栈底
+foreach (object item in stack)
+{
+    Console.WriteLine(item);
+}
+
+//将Stack转换为object[]数组
+object[] array = stack.ToArray();
+for (int i = 0; i < array.Length; i++)
+{
+    Console.WriteLine(array[i]);
+}
+
+//while循环遍历栈
+while (stack.Count > 0)
+{
+    Console.WriteLine(stack.Pop());
+}
+``` 
+
+装箱拆箱：  
+由于用万物之父来存储数据，自然存在装箱拆箱。    
+当往其中进行值类型存储时就是在装箱 当将值类型对象取出来转换使用时，就存在拆箱。 
+
+
+## Queue  
+
+### Queue 本质：  
+Queue是一个c#为我们封装好的类   
+它的本质也是object[]数组，只是封装了特殊的存储规则  
+Queue是队列存储容器 
+队列是一种先进先出的数据结构    
+先存入的数据先获取，后存入的数据后获取  
+先进先出    
+
+申明：
+```csharp
+Queue queue = new Queue<int>();  //也要引用System.Collections命名空间
+```
+
+增：
+```csharp
+//只能一个一个的存入
+queue.Enqueue(1);
+//和ArrayList一样可以存储不同类型的数据 本质都是object[]数组
+queue.Enqueue("hello");
+queue.Enqueue(3.14);
+```
+
+取：
+```csharp
+//只能一个一个的取
+int i = queue.Dequeue();
+```
+
+查：   
+```csharp
+//队列无法查看指定位置的元素只能查看队头的元素
+int front = queue.Peek();
+
+//查找指定元素是否存在
+bool isExist = queue.Contains(1);
+``` 
+
+改：
+```csharp
+queue.Clear();
+```
+
+遍历：
+```csharp
+//用foreach遍历队列 顺序由队头到队尾
+foreach (object item in queue)
+{
+    Console.WriteLine(item);
+}
+
+//将Queue转换为object[]数组
+object[] array = queue.ToArray();
+for (int i = 0; i < array.Length; i++)
+{
+    Console.WriteLine(array[i]);
+}
+
+//while循环遍历队列
+while (queue.Count > 0)
+{
+    Console.WriteLine(queue.Dequeue());
+}
+```
+
+装箱拆箱：  
+由于用万物之父来存储数据，自然存在装箱拆箱。    
+当往其中进行值类型存储时就是在装箱 当将值类型对象取出来转换使用时，就存在拆箱。 
+
+
+## HashTable  
+
+###  HashTable 本质：  
+Hashtable（又称散列表）是基于键的哈希代码组织起来的 键/值对
+它的主要作用是提高数据查询的效率
+使用键来访问集合中的元素
+
+申明：  
+```csharp
+Hashtable hashtableTable = new Hashtable();  //也要引用System.Collections命名空间
+```
+
+增：
+```csharp
+//添加键值对 键值对可以是任意类型
+hashtableTable.Add("name", "shinjayo");
+//添加键值对
+hashtableTable.Add(1, "hello");
+
+//但是不能在同一个Hashtable中添加相同的键
+hashtableTable.Add("name", "shinjayo2"); // 报错
+```
+
+删：
+```csharp
+//只能通过键来删除
+hashtableTable.Remove("name"); 
+
+//删除不存在的键 也不会报错
+hashtableTable.Remove(2); //无事发生
+
+//清空
+hashtableTable.Clear();
+```
+
+查：
+```csharp
+//根据键来获取值 找不到会返回null
+string name = (string)hashtableTable["name"];
+
+//查看指定键是否存在
+bool isExist = hashtableTable.ContainsKey("name");
+
+//查看指定值是否存在
+bool isExistValue = hashtableTable.ContainsValue("shinjayo");
+```
+
+改：
+```csharp
+//只能改 键对应的值 不能改键
+hashtableTable["name"] = "shinjayo3";
+```
+
+遍历：
+```csharp
+//得到所有键值对
+Console.WriteLine(hashtableTable.Count);
+
+//遍历所有键
+foreach (object key in hashtableTable.Keys)
+{
+    Console.WriteLine(key);
+}
+
+//遍历所有值
+foreach (object value in hashtableTable.Values)
+{
+    Console.WriteLine(value);
+}
+
+//遍历所有键值对
+foreach (DictionaryEntry entry in hashtableTable)
+{
+    Console.WriteLine(entry.Key + " -> " + entry.Value);
+}
+
+//迭代器遍历所有键值对
+```csharp
+IEnumerator enumerator = hashtableTable.GetEnumerator();
+while (enumerator.MoveNext())
+{
+    DictionaryEntry entry = (DictionaryEntry)enumerator.Current;
+    Console.WriteLine(entry.Key + " -> " + entry.Value);
+}
+```
+
+装箱拆箱：
+由于用万物之父来存储数据，自然存在装箱拆箱。    
+当往其中进行值类型存储时就是在装箱 当将值类型对象取出来转换使用时，就存在拆箱。 
+
+## 泛型     
+
+### 泛型是什么：
+泛型实现了类型参数化，达到代码重用目的  
+通过类型参数化来实现同一份代码上操作多种类型    
+泛型相当于类型占位符    
+定义类或方法时使用替代符代表变量类型    
+当真正使用类或者方法时再具体指定类型    
+
+### 泛型分类
+
+#### 泛型类和泛型接口
+
+基本语法：
+```csharp
+// class 类名<泛型占位字母>
+class GenericClass<T>
+{
+    public T value;
+}
+// interface 接口名<泛型占位字母>
+interface GenericInterface<T>
+{
+    //泛型接口的成员
+}
+
+//泛型占位字母可以有多个
+void GenericMethod<T, U>(T param1, U param2)
+{
+    //泛型函数的实现
+}
+```
+
+使用：
+```csharp
+//实例化泛型类
+GenericClass<int> genericClass = new GenericClass<int>();
+genericClass.value = 100;
+Console.WriteLine(genericClass.value); //打印出100
+
+GenericClass<string> genericClass2 = new GenericClass<string>();
+genericClass2.value = "hello";
+Console.WriteLine(genericClass2.value); //打印出hello
+
+//实例化泛型接口
+GenericInterface<int> genericInterface = new GenericInterface<int>();
+```
+
+#### 泛型函数
+```csharp
+//泛型函数
+// 方法名<泛型占位字母>(参数列表)
+void GenericMethod<T>(T param)
+{
+    //泛型函数的实现
+}
+```
+
