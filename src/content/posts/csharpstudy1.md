@@ -3,6 +3,7 @@ title: C#学习笔记1
 published: 2026-07-01
 pinned: false
 description: C#学习笔记1 - 面向对象编程、类与对象、继承、多态、接口等核心概念
+tags: [C#,学习]
 author: boluobao
 draft: false
 ---
@@ -391,6 +392,11 @@ public class Person
     public static int Count = 0;
     //成员变量
     private string name;
+    //静态函数
+    public static void SetCount(int count) //注意在静态函数中只能访问静态成员（方法） 或者作为参数传进来的变量
+    {
+        Count = count;
+    }
 }
 ```
 
@@ -1189,7 +1195,7 @@ sb.Append("123");
 
 ## ⚖️ 结构体和类的区别
 
-结构体和类的最大区别是存储空间的区别：==结构体是值类型，类是引用类型。== 它们的存储位置一个在栈上，一个在堆上。
+结构体和类的最大区别是存储空间的区别：结构体是值类型，类是引用类型。它们的存储位置一个在栈上，一个在堆上。
 
 结构体具备面向对象思想中封装的特性，但是不具备继承和多态的特性。由于结构体不具备继承的特性，所以它不能用 `protected` 来修饰成员变量。
 

@@ -2,7 +2,8 @@
 title: C#学习笔记2
 published: 2026-07-06
 pinned: false
-description: C#学习笔记2
+description: C#学习笔记2 - 泛型类、泛型接口、泛型函数等
+tags: [C#,学习]
 author: boluobao
 draft: false
 ---
@@ -393,15 +394,22 @@ class GenericClass<T>
     public T value;
 }
 // interface 接口名<泛型占位字母>
-interface GenericInterface<T>
+interface IGenericInterface<T>
 {
     //泛型接口的成员
+    T value
+    {
+        get;
+        set;
+    }
 }
 
 //泛型占位字母可以有多个
 void GenericMethod<T, U>(T param1, U param2)
 {
     //泛型函数的实现
+    public T result = param1;
+    public U result2 = param2;
 }
 ```
 
@@ -416,17 +424,2060 @@ GenericClass<string> genericClass2 = new GenericClass<string>();
 genericClass2.value = "hello";
 Console.WriteLine(genericClass2.value); //打印出hello
 
-//实例化泛型接口
-GenericInterface<int> genericInterface = new GenericInterface<int>();
+GenericMethod<int, string> genericMethod = new GenericMethod<int, string>();
+genericMethod(100, "hello");
+Console.WriteLine(genericMethod.result); //打印出100
+Console.WriteLine(genericMethod.result2); //打印出hello
+
+//泛型接口继承
+class GenericClass2 : IGenericInterface<int>
+{
+    public int value
+    {
+        get;
+        set;
+    }
+}
 ```
 
 #### 泛型函数
 ```csharp
 //泛型函数
-// 方法名<泛型占位字母>(参数列表)
-void GenericMethod<T>(T param)
+//普通类中泛型函数的实现
+class Test
 {
-    //泛型函数的实现
+    public T GenericMethod<T>(T param)
+    {
+        return param;
+    }
+
+    public void TestMethod<T>()
+    {
+        //用泛型在函数内部进行逻辑处理
+        T param = default(T);
+    }
+
+    public void TestMethod2<T,U>(T param ,U param2) //泛型用作多个参数
+    {
+        return;
+    }
+}
+
+//泛型函数的调用
+Test test = new Test();
+int result = test.GenericMethod<int>(100);
+Console.WriteLine(result); //打印出100
+
+//泛型类中的泛型函数
+class GenericClass<T>
+{
+    //泛型函数所用的占位符不能与泛型类的占位符相同 不过可以将泛型类的占位符作为参数的类型占位符
+    public K GenericMethod<K>(K param ,T param2)
+    {
+        return param;
+    }
+}
+
+//泛型类中的泛型函数的调用
+GenericClass<int> genericClass = new GenericClass<int>();
+int result2 = genericClass.GenericMethod<int>(100, 200);
+Console.WriteLine(result2); //打印出100
+
+//泛型函数的重载
+class Test
+{
+    public void GenericMethod<T>(T param)
+    {
+        return;
+    }
+
+    public void GenericMethod()
+    {
+        return;
+    }
+}
+
+//调用
+test.GenericMethod<int>(100);
+test.GenericMethod();
+```
+
+### 泛型的作用  
+1.不同类型对象的相同逻辑处理就可以选择泛型  
+2.使用泛型可以一定程度避免装箱拆箱  
+
+## 泛型约束 
+
+### 什么是泛型约束？
+让泛型的类型有一定的限制    
+关键字：where   
+泛型约束一共有6种   
+1.值类型  where 泛型字母：struct    
+2.引用类型   where泛型字母：class   
+3.存在无参公共构造函数   where泛型字母：new()  
+4.某个类本身或者其派生类   where泛型字母：类名  
+5.某个接口的派生类型   where泛型字母：接口名    
+6.另一个泛型类型本身或者派生类型   where泛型字母：另一个泛型字母    
+
+#### 值类型约束 
+
+```csharp
+//值类型约束 只能使用值类型作为参数的类型
+class GenericClass<T> where T : struct
+{
+    public T value;
+
+    public void Function<K>(K param) where K : struct
+    {
+        value = param;
+    }
 }
 ```
+
+#### 引用类型约束
+
+```csharp
+//引用类型约束 只能使用引用类型作为参数的类型
+class GenericClass<T> where T : class
+{
+    public T value;
+
+    public void Function<K>(K param) where K : class
+    {
+        value = param;
+    }
+}
+```
+
+#### 存在无参公共构造函数约束
+
+```csharp
+//存在无参公共构造函数约束 只能使用存在无参公共构造函数的类型作为参数的类型
+class GenericClass<T> where T : new()
+{
+    public T value;         
+
+    public void Function<K>(K param) where K : new()
+    {
+        value = param;
+    }
+}
+
+class Test1
+{
+
+}
+
+class Test2
+{
+    public Test2(int i)
+    {
+
+    }
+}
+
+GenericClass<Test1> genericClass = new GenericClass<Test1>(); //可以使用Test1作为参数的类型
+GenericClass<Test2> genericClass2 = new GenericClass<Test2>(); //不能使用Test2作为参数的类型 因为Test2没有无参公共构造函数
+```
+
+#### 某个类本身或者其派生类约束
+
+```csharp
+//某个类本身或者其派生类约束 只能使用某个类本身或者其派生类作为参数的类型
+class GenericClass<T> where T : Test1
+{
+    public T value;
+
+    public void Function<K>(K param) where K : Test1
+    {
+        value = param;
+    }
+}
+
+class Test3 : Test1
+{
+
+}
+
+GenericClass<Test3> genericClass3 = new GenericClass<Test3>(); //可以使用Test3作为参数的类型
+```
+
+#### 某个接口的派生类型约束
+
+```csharp
+//某个接口的派生类型约束 只能使用某个接口的或者其派生类作为参数的类型
+class GenericClass<T> where T : IGenericInterface<int>
+{
+    public T value;
+
+    public void Function<K>(K param) where K : IGenericInterface<int>
+    {
+        value = param;
+    }
+}
+
+class Test4 : IGenericInterface<int>
+{
+    public int value
+    {
+        get;
+        set;
+    }
+}
+
+GenericClass<Test4> genericClass4 = new GenericClass<Test4>(); //可以使用Test4作为参数的类型
+```
+
+#### 另一个泛型类型本身或者派生类型约束
+
+```csharp
+class GenericClass<T,U> where T : U //T必须是U的派生类或U本身
+{
+    public void Function<K,V,L>(K param,V param2,L param3) where K : V where L : U
+    {
+
+    }
+}
+
+class Test5 : Test1
+{
+
+}
+
+GenericClass<Test5,Test1> genericClass5 = new GenericClass<Test5,Test1>(); //可以使用Test5作为参数的类型 因为Test5是Test1的派生类
+GenericClass<Test1,Test1> genericClass52 = new GenericClass<Test1,Test1>(); 
+
+```
+
+### 泛型约束的组合使用
+
+```csharp   
+class Test6<T> where T : class,new()
+{
+
+}
+```
+
+### 多个泛型有约束    
+
+```csharp
+class Test7<T,K> where T : class where K : struct
+{
+
+}
+```
+
+## List
+
+### List的本质
+
+List是一个c#为我们封装好的类，它的本质是一个可变类型的泛型数组，List类帮助我们实现了很多方法，比如泛型数组的增删查改等操作。    
+
+申明：
+```csharp
+List<int> list = new List<int>(); //引用命名空间：System.Collections.Generic
+List<string> list2 = new List<string>();  //申明一个字符串类型的List
+```
+
+增：
+```csharp
+list.Add(100);
+
+list.AddRange(new int[] {1,2,3});
+
+list.Insert(0,1000); //在索引为0的位置插入1000
+```
+
+删：
+```csharp
+//移除指定元素
+list.Remove(100);
+
+//移除指定索引的元素
+list.RemoveAt(0);
+
+//清空
+list.Clear();
+```
+
+查：
+```csharp
+//获取指定索引的元素
+int value = list[0];
+
+//查看元素是否存在
+bool isExist = list.Contains(100);
+
+//正向查找元素位置
+int index = list.IndexOf(100);
+
+//反向查找元素位置
+int index2 = list.LastIndexOf(100);
+```
+
+改：
+```csharp
+//修改指定索引的元素
+list[0] = 1000;
+```
+
+遍历：
+```csharp
+//for循环遍历
+for(int i = 0;i < list.Count;i++)
+{
+    int value = list[i];
+    Console.WriteLine(value);
+}
+
+//foreach循环遍历
+foreach(int value in list)
+{
+    Console.WriteLine(value);
+}
+```
+
+排序：
+```csharp
+//list提供的排序方法
+list.Sort(); //默认是升序排序
+//ArrayList也有这种方法
+
+//自定义排序
+class Item : IComparer<Item>
+{
+    public int money;
+
+    public Item(int money)
+    {
+        this.money = money;
+    }
+
+    //只有在自定义类中实现CompareTo方法，才能使用list.Sort()方法 要实现IComparer<Item>接口
+    public int CompareTo([AllowNull] Item other)
+    {
+        //返回值的含义 等于0 表示相等 小于0 表示当前对象小于其他对象 大于0 表示当前对象大于其他对象
+
+        //升序排序
+        if(this.money > other.money)
+        {
+            return 1
+        }
+        else if(this.money < other.money)
+        {
+            return -1
+        }
+        else
+        {
+            return 0
+        }
+    }
+}
+
+//用委托进行排序    
+class ShopItem
+{
+    public int id;
+
+    public ShopItem(int id)
+    {
+        this.id = id;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        List<ShopItem> shopItems = new List<ShopItem>();
+        shopItems.Add(new ShopItem(1));
+        shopItems.Add(new ShopItem(2));
+        shopItems.Add(new ShopItem(3));
+
+        shopItems.Sort(SortShopItems); //根据id升序排序
+
+        foreach(ShopItem item in shopItems)
+        {
+            Console.WriteLine(item.id);
+        }
+    }
+
+    static int SortShopItems(ShopItem x,ShopItem y)
+    {
+        //传入的两个参数x和y是ShopItem类型的对象
+        //进行两两比较 用左边的id和右边的id进行比较
+        //返回值的含义 等于0 表示相等 小于0 表示当前对象小于其他对象 大于0 表示当前对象大于其他对象
+        //升序排序
+        if(x.id > y.id)
+        {
+            return 1
+        }
+        else if(x.id < y.id)
+        {
+            return -1
+        }
+        else
+        {
+            return 0
+        }
+    }
+}
+```
+
+一个Monster基类，Boss和Gablin类继承它。
+在怪物类的构造函数中，将其存储到一个怪物List中
+遍历列表可以让Boss和Gablin对象产生不同攻击
+
+```csharp
+using System;
+using System.Collections.Generic;
+
+// 1. 定义怪物基类（抽象类，强制派生类实现 Attack）
+public abstract class Monster
+{
+    // 静态列表，用于存储所有已创建的怪物实例
+    private static List<Monster> _allMonsters = new List<Monster>();
+
+    // 公共属性，方便外部访问所有怪物
+    public static IReadOnlyList<Monster> AllMonsters => _allMonsters;
+
+    // 基类构造函数：每创建一个 Monster（或其派生类）实例，就自动添加到列表中
+    protected Monster()
+    {
+        _allMonsters.Add(this);
+    }
+
+    // 抽象攻击方法，派生类必须提供具体实现
+    public abstract void Attack();
+}
+
+// 2. 派生类 Boss
+public class Boss : Monster
+{
+    public Boss()
+    {
+        // 基类构造函数会自动将 this 添加到列表中
+    }
+
+    public override void Attack()
+    {
+        Console.WriteLine("Boss 发动毁灭性打击！造成 999 点伤害。");
+    }
+}
+
+// 3. 派生类 Goblin
+public class Goblin : Monster
+{
+    public Goblin()
+    {
+        // 同样自动注册
+    }
+
+    public override void Attack()
+    {
+        Console.WriteLine("Goblin 挥动小刀，造成 5 点伤害。");
+    }
+}
+
+// 4. 测试
+class Program
+{
+    static void Main()
+    {
+        // 创建怪物实例 —— 每次 new 都会自动加入 Monster.AllMonsters 列表
+        Boss boss1 = new Boss();
+        Boss boss2 = new Boss();
+        Goblin goblin1 = new Goblin();
+        Goblin goblin2 = new Goblin();
+
+        // 遍历所有怪物，调用 Attack 方法 —— 多态发挥作用
+        Console.WriteLine("所有怪物开始攻击：");
+        foreach (Monster monster in Monster.AllMonsters)
+        {
+            monster.Attack();
+        }
+
+        // 输出结果：
+        // Boss 发动毁灭性打击！造成 999 点伤害。
+        // Boss 发动毁灭性打击！造成 999 点伤害。
+        // Goblin 挥动小刀，造成 5 点伤害。
+        // Goblin 挥动小刀，造成 5 点伤害。
+    }
+}
+```
+
+## Dictionary
+
+### Dictionary的本质
+
+可以将Dictionary理解为拥有泛型的Hashtable 它也是基于键的哈希代码组织起来的键/值对 键值对类型从Hashtable的object变为了可以自己制定的泛型 
+
+申明：
+```csharp
+Dictionary<int,string> dict = new Dictionary<int,string>(); //引用命名空间：System.Collections.Generic
+```
+
+增：
+```csharp
+//不能出现相同键
+dict.Add(100,"100");
+```
+
+删：
+```csharp
+//只能通过键去删除 删除不存在的键无事发生
+dict.Remove(100);
+
+//清空
+dict.Clear();
+```
+
+查：
+```csharp
+//获取指定键的值 找不到会报错（这里和Hashtable不同）
+string value = dict[100];
+
+//查看键是否存在
+bool isExist = dict.ContainsKey(100);
+
+//查看值是否存在
+bool isExist2 = dict.ContainsValue("100");
+```
+
+改：
+```csharp
+//修改指定键的值
+dict[100] = "1000";
+```
+
+遍历：
+```csharp
+//遍历所有键
+foreach(int key in dict.Keys)
+{
+    Console.WriteLine(key);
+}
+
+//遍历所有值
+foreach(string value in dict.Values)
+{
+    Console.WriteLine(value);
+}
+
+//遍历所有键值对
+foreach(KeyValuePair<int,string> pair in dict)
+{
+    Console.WriteLine($"键：{pair.Key}，值：{pair.Value}");
+}
+```
+
+## 顺序存储和链式存储
+
+### 数据结构    
+ 
+数据结构是计算机存储、组织数据的方式（规则）    
+数据结构是指相互之间存在一种或多种特定关系的数据元素的集合  
+比如自定义的一个类也可以称为一种数据结构自己定义的数据组合规则  
+不要把数据结构想的太复杂    
+简单点理解，就是人定义的存储数据和表示数据之间关系的规则而已    
+常用的数据结构（前辈总结和制定的一些经典规则）  
+数组、栈、队列、链表、树、图、堆、散列表    
+
+### 线性表
+
+线性表是一种数据结构，是由n个具有相同特性的数据元素的有限序列   
+比如数组、ArrayList、Stack、Queue、链表等等 
+
+### 顺序存储
+
+用一组地址连续的存储单元一次存储线性表的各个数据元素    
+
+### 链式存储
+
+用一组任意的存储单元一次存储线性表的各个数据元素    
+
+#### 简单单链表的实现
+
+```csharp
+class LinkedList<T>
+{
+    public LinkedNode<T> head = null;
+    public LinkedNode<T> tail = null;
+
+    public void Add(T value)
+    {
+        LinkedNode<T> node = new LinkedNode<T>(value);
+
+        if (head == null)
+        {
+            head = node;
+            tail = node;
+        }
+        else
+        {
+            tail.nextNode = node;
+            tail = node;
+        }
+    }
+
+    public void Remove(T value)
+    {
+        if(head == null)
+        {
+            return;
+        }
+
+        if(head.value.Equals(value))
+        {
+            head = head.nextNode;
+            if(head == null)
+            {
+                tail = null;
+            }
+        }
+
+        LinkedNode<T> node = head;
+        while (node.nextNode != null)
+        {
+            if (node.nextNode.value.Equals(value))
+            {
+                node.nextNode = node.nextNode.nextNode;
+                break;
+            }
+            node = node.nextNode;
+        }
+    }
+}
+```
+
+#### 简单双链表的实现
+
+```csharp
+using System;
+
+/// <summary>
+/// 双向链表节点
+/// </summary>
+public class DoublyNode<T>
+{
+    public T Data { get; set; }
+    public DoublyNode<T>? Prev { get; set; } // 前驱
+    public DoublyNode<T>? Next { get; set; } // 后继
+
+    public DoublyNode(T data)
+    {
+        Data = data;
+        Prev = null;
+        Next = null;
+    }
+}
+
+/// <summary>
+/// 自定义双向链表
+/// </summary>
+public class DoublyLinkedList<T>
+{
+    // ===== 公有属性 =====
+    public DoublyNode<T>? Head { get; private set; }
+    public DoublyNode<T>? Tail { get; private set; }
+    public int Count { get; private set; }
+
+    public DoublyLinkedList()
+    {
+        Head = null;
+        Tail = null;
+        Count = 0;
+    }
+
+    // ===== 1. 添加数据到链表最后 =====
+    public void AddLast(T data)
+    {
+        var newNode = new DoublyNode<T>(data);
+
+        if (Head == null) // 空链表
+        {
+            Head = newNode;
+            Tail = newNode;
+        }
+        else
+        {
+            // 链接新节点到尾部
+            Tail!.Next = newNode; // Tail 不可能为 null，用 ! 消除警告
+            newNode.Prev = Tail;
+            Tail = newNode;
+        }
+        Count++;
+    }
+
+    // ===== 2. 删除指定位置节点（索引从 0 开始） =====
+    public bool RemoveAt(int index)
+    {
+        // 检查索引有效性
+        if (index < 0 || index >= Count)
+            return false;
+
+        // 情况1：删除唯一节点（链表只有一个节点）
+        if (Count == 1)
+        {
+            Head = null;
+            Tail = null;
+            Count = 0;
+            return true;
+        }
+
+        // 定位到要删除的节点
+        DoublyNode<T> current;
+        // 优化：如果索引在前半段，从头向后找；否则从尾向前找
+        if (index < Count / 2)
+        {
+            current = Head!;
+            for (int i = 0; i < index; i++)
+                current = current.Next!;
+        }
+        else
+        {
+            current = Tail!;
+            for (int i = Count - 1; i > index; i--)
+                current = current.Prev!;
+        }
+
+        // 删除逻辑
+        if (current.Prev == null) // 删除头节点
+        {
+            Head = current.Next;
+            Head!.Prev = null;
+        }
+        else if (current.Next == null) // 删除尾节点
+        {
+            Tail = current.Prev;
+            Tail!.Next = null;
+        }
+        else // 删除中间节点
+        {
+            current.Prev.Next = current.Next;
+            current.Next.Prev = current.Prev;
+        }
+
+        Count--;
+        return true;
+    }
+
+    // ===== 辅助方法：正向打印（用于测试） =====
+    public void PrintForward()
+    {
+        if (Head == null)
+        {
+            Console.WriteLine("链表为空");
+            return;
+        }
+        var current = Head;
+        Console.Write("Head -> ");
+        while (current != null)
+        {
+            Console.Write($"{current.Data} -> ");
+            current = current.Next;
+        }
+        Console.WriteLine("null");
+    }
+
+    // ===== 辅助方法：反向打印（验证双向链接） =====
+    public void PrintBackward()
+    {
+        if (Tail == null)
+        {
+            Console.WriteLine("链表为空");
+            return;
+        }
+        var current = Tail;
+        Console.Write("Tail -> ");
+        while (current != null)
+        {
+            Console.Write($"{current.Data} -> ");
+            current = current.Prev;
+        }
+        Console.WriteLine("null");
+    }
+}
+```
+
+### 顺序存储和链式存储的优缺点  
+
+从增删查改的角度去思考  
+增：链式存储计算上优于顺序存储 （中间插入时链式不用像顺序一样去移动位置）   
+删：链式存储计算上优于顺序存储 （中间删除时链式不用像顺序一样去移动位置）   
+查：顺序存储使用上优于链式存储 （数组可以直接通过下标得到元素，链式需要遍历）   
+改：顺序存储使用上优于链式存储 （数组可以直接通过下标得到元素，链式需要遍历）   
+
+## LinkedList
+
+LinkedList是C#中提供的一个双向链表类，用于存储元素。    
+本质是一个可变类型的泛型双向链表  
+
+申明：
+```csharp
+using System.Collections.Generic;
+
+LinkedList<int> linkedList = new LinkedList<int>();
+```
+
+增：
+```csharp
+//在链表尾部添加元素
+linkedList.AddLast(1);
+
+//在链表头部添加元素
+linkedList.AddFirst(0);
+
+//在指定节点后添加元素
+linkedList.AddAfter(linkedList.First, 2);
+
+//在指定节点前添加元素
+linkedList.AddBefore(linkedList.First, -1);
+```
+
+删：
+```csharp
+//移除头节点
+linkedList.RemoveFirst();
+//移除尾节点
+linkedList.RemoveLast();
+
+//移除指定节点 无法通过索引删除，只能通过值删除
+linkedList.Remove(1);
+
+//清空
+linkedList.Clear();
+```
+
+查：
+```csharp
+//头节点
+LinkedListNode<int> head = linkedList.First;
+//尾节点
+LinkedListNode<int> tail = linkedList.Last;
+//链表长度
+int count = linkedList.Count;
+
+//找到指定值的节点
+LinkedListNode<int> node = linkedList.Find(1); //找不到返回null
+
+//判断元素是否存在
+bool isExist = linkedList.Contains(1);
+```
+
+改：
+```csharp
+//需要先得到节点
+LinkedListNode<int> node = linkedList.Find(1);
+//修改节点值
+node.Value = 100;
+```
+
+遍历：
+```csharp
+//foreach遍历链表
+foreach (int item in linkedList)
+{
+    Console.WriteLine(item);
+}
+
+//通过节点遍历
+//从头遍历
+LinkedListNode<int> current = linkedList.First;
+while (current != null)
+{
+    Console.WriteLine(current.Value);
+    current = current.Next;
+}
+
+//从尾遍历
+current = linkedList.Last;
+while (current != null)
+{
+    Console.WriteLine(current.Value);
+    current = current.Prev;
+}
+```
+
+## 泛型栈和队列
+
+申明：
+```csharp
+using System.Collections.Generic;
+
+Stack<int> stack = new Stack<int>();
+Queue<int> queue = new Queue<int>();
+//使用和之前的栈和队列是一致的
+```
+
+## 委托     
+
+### 委托的定义
+
+委托是函数（方法）的容器 可以理解为表示函数（方法）的变量类型 用来存储、传递函数（方法）  
+委托的本质是一个类，用来定义函数（方法）的类型（返回值和参数的类型）
+不同的函数（方法）必须对应各自“格式”一致的委托  
+
+### 基本语法
+
+```csharp
+// 关键字 delegate
+// 访问修饰符 delegate 返回值 委托名(参数列表);
+//写在哪里 在namespace中 或 class语句块中 
+
+//申明一个无返回值无参数的委托 委托是没有重载的 默认public
+public delegate void MyDelegate();
+```
+
+### 使用自定义委托      
+
+```csharp
+//申明一个自定义委托
+public delegate void MyDelegate(int a, int b);
+
+//申明符合委托格式的函数
+public void MyMethod(int a, int b)
+{
+    Console.WriteLine($"a={a}, b={b}");
+}
+
+//将函数存放在委托实例中
+MyDelegate myDelegate = new MyDelegate(MyMethod);
+// 或者 
+MyDelegate myDelegate = MyMethod;
+
+//调用委托实例
+myDelegate.Invoke(1, 2);
+
+//委托用于类的成员变量
+public class MyClass
+{
+    public MyDelegate myDelegate { get; set; }
+}
+
+//委托用于函数的参数
+public void MyMethod(MyDelegate del)
+{
+    del(1, 2);
+}
+```
+
+### 多播委托        
+
+委托可以存储多个函数（方法）的实例，每个实例都可以被调用。  
+
+```csharp
+//申明一个自播委托
+public delegate void MyMulticastDelegate(int a, int b);
+
+//申明符合委托格式的函数
+public void MyMethod1(int a, int b)
+{
+    Console.WriteLine($"a={a}, b={b}");
+}
+
+public void MyMethod2(int a, int b)
+{
+    Console.WriteLine($"a={a}, b={b}");
+}
+
+//将函数存放在多播委托实例中
+MyMulticastDelegate myMulticastDelegate = MyMethod1;
+myMulticastDelegate += MyMethod2;
+
+//调用多播委托实例  
+myMulticastDelegate.Invoke(1, 2);
+
+```
+
+增：
+```csharp
+//在多播委托实例中添加函数
+myMulticastDelegate += MyMethod3;
+```
+
+删：
+```csharp
+//从多播委托实例中移除函数 如果多减也不会报错
+myMulticastDelegate -= MyMethod3;
+
+//清空多播委托实例
+myMulticastDelegate = null;
+```
+
+### 系统提供的委托
+
+```csharp
+//使用系统自带委托需要引入using System;
+public void MyFunc()
+{
+    Console.WriteLine("MyFunc");
+}
+//无返回值无参数的委托
+Action action = MyFunc;
+
+public int MyFunc2()
+{
+    return 100;
+}
+//任意返回值无参数的委托 public delegate TResult Func<out TResult>();
+Func<int> intFunc = MyFunc2;
+
+public void MyFunc3(int a, string b, bool c)
+{
+    Console.WriteLine($"a={a}, b={b}, c={c}");
+}
+
+//可以传n个参数的 系统提供的1~16个参数的委托
+Action<int,string,bool> action3 = MyFunc3;
+
+public int MyFunc4(int a, int b)
+{
+    return a + b;
+}
+//可以传n个参数 并且有返回值的委托
+Func<int,int,int> intFunc4 = MyFunc4;
+```
+
+## 事件
+
+事件是基于委托的存在 事件是委托的安全包裹 让委托的使用更具有安全性 是一种特殊的变量类型 
+
+### 事件的使用 
+
+```csharp
+//申明语法： 访问修饰符 event 委托类型 事件名;
+//事件的使用：
+//1.事件是作为成员变量存在于类中
+//2.委托怎么用事件就怎么用
+//事件相对于委托的区别：
+//1.不能在类外部 赋值
+//2.不能再类外部 调用
+//注意：它只能作为成员存在于类和接口以及结构体中
+using System;
+
+namespace Lesson
+{
+    class Test
+    {
+        public Action MyDel;
+        public event Action MyEvent;
+
+        public Test()
+        {
+
+        }
+
+        public void Func()
+        {
+            Console.WriteLine("123");
+        }
+
+        //事件只能通过类中的函数进行安全调用
+        public void RaiseEvent()
+        {
+            MyEvent?.Invoke();
+        }
+    }
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            Test t = new Test();
+
+            //委托可以在类的外部赋值和调用
+            t.MyDel = Func1;
+            t.MyDel += Func1;
+            t.MyDel.Invoke();
+
+            //事件不能在类的外部赋值和调用
+            //t.MyEvent = Func1;
+            //t.MyEvent.Invoke();
+            //但事件可以在类的外部进行订阅和取消订阅
+            t.MyEvent += Func1;
+            t.MyEvent -= Func1;
+        }
+
+        public static void Func1()
+        {
+            Console.WriteLine("131");
+        }
+    }
+}
+```
+
+### 事件的作用
+
+1.防止外部随意置空委托  
+2.防止外部随意调用委托  
+3.事件相当于对委托进行了一次封装让其更加安全    
+
+
+## 匿名函数 
+
+没有名称的函数 主要配合委托和事件来使用 脱离委托和事件是不会使用匿名函数的
+
+### 基本语法
+
+```csharp
+/*delegate (参数列表)
+{
+    //函数体
+}
+何时使用？
+1.函数中传递委托参数时
+2.委托或事件赋值时
+*/
+
+//使用：
+//无参无返回
+Action action = delegate()
+{
+    Console.WriteLine("123");
+};
+
+//有参数
+Action<int> action2 = delegate(int a)
+{
+    Console.WriteLine($"a={a}");
+};
+
+//有返回值
+Func<int> intFunc = delegate()
+{
+    return 100;
+};
+
+//一般情况作为函数参数传递 或者 作为函数的返回值
+//作为参数传递
+class Test
+{
+    public Action action;
+    
+    public void DoSomething(Action action)
+    {
+        action?.Invoke();
+    }
+//作为返回值
+    public Action GetAction()
+    {
+        return delegate()
+        {
+            Console.WriteLine("123");
+        };
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Test t = new Test();
+        t.DoSomething(delegate()
+        {
+            Console.WriteLine("123");
+        });
+        Action action = t.GetAction();
+        action?.Invoke();
+    }
+}
+```
+
+### 匿名函数的缺点
+
+添加到委托或事件容器后 不记录 无法单独移除 只能清空整个容器 
+
+## lambda表达式
+
+可以将lambda表达式理解为匿名函数的简写 他除了写法不同外 使用上和匿名函数一模一样 都是配合委托和事件来使用的 
+
+### lambda表达式的的基本语法
+
+```csharp
+/*(参数列表) => 
+{
+    //函数体
+}
+*/
+
+//使用：
+//无参无返回
+Action action = () =>
+{
+    Console.WriteLine("123");
+};
+
+//有参数
+Action<int> action2 = (int a) =>
+{
+    Console.WriteLine($"a={a}");
+};
+
+Action<int> action3 = (value) =>
+{
+    Console.WriteLine($"value={value}"); //省略参数类型
+}
+
+//有返回值
+Func<int> intFunc = () =>
+{
+    return 100;
+};
+```
+
+缺点也与匿名函数一致
+
+
+### 闭包
+
+内层的函数可以引用包含在他外层的函数的变量 即使外层函数的执行已经终止   
+==注意== 该变量提供的值并非临时创建的值，而是在父函数范围内的最终值 
+
+```csharp
+//闭包的使用
+class Test
+{
+    public Action action；
+
+    public Test()
+    {
+        int value = 100;
+
+        action = () =>
+        {
+            //这里形成了闭包 value的生命周期被改变了
+            Console.WriteLine($"value={value}");
+        };
+
+        value = 1000;
+    }
+
+    public void DoSomething()
+    {
+        action?.Invoke(); //打印的value是1000 因为是父函数的最终值
+    }
+}
+```
+
+## 协变逆变 
+
+### 什么是协变逆变？
+
+协变：和谐的变化，自然的变化 因为里氏替换原则 所以父类可以作为子类的容器    
+
+逆变：逆常规的变化，不正常的变化 因为里氏替换原则 所以子类不能用作父类的容器    
+
+协变和逆变是用来修饰泛型的  
+协变：out   
+逆变：in    
+用于在泛型中修饰泛型字母的 只有在泛型接口和泛型委托中才能使用   
+
+### 作用  
+
+```csharp
+//1.返回值和参数
+//用out修饰的泛型 只能用作返回值 不能用作参数
+delegate T Get<out T>();
+
+//用in修饰的泛型 只能用作参数 不能用作返回值
+delegate void Set<in T>(T t);
+
+//2.里氏替换原则
+
+delegate T TestOut<out T>();
+delegate void TestIn<in T>(T t);   
+
+class Father
+{
+
+}
+
+class Son: Father
+{
+
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {   
+        TestOut<Son> oS = () =>
+        {
+            return new Son();
+        };
+
+        TestOut<Father> oF = oS;  //协变 在delegate T TestOut<out T>()添加了out后 可以将子类赋值给父类的委托 这里是子类的委托装进父类中
+
+        TestIn<Father> iF = (t) =>
+        {
+
+        };
+
+        TestIn<Son> iS = iF;  //逆变 在delegate void TestIn<in T>()添加了in后 可以将父类赋值给子类的委托
+        iS?.Invoke(new Son()); //实际上仍然是父类装子类 in代表的是参数 所以这里表示子类参数装进父类中
+    }
+}
+```
+
+## 多线程
+
+### 进程 
+
+进程（Process）是计算机中的程序关于某数据集合上的一次运行活动 是系统进行资源分配和调度的基本单位，是操作系统结构的基础  
+进程之间可以相互运行 互不干扰 进程之间也可以互相访问、操作  
+
+### 线程 
+
+线程是操作系统进行运算调度的最小单位 它被包含在进程当中，是进程中的实际运作单位  
+一条线程指的是进程中一个单一顺序的控制流，一个进程可以并发多个线程
+
+### 什么是多线程？
+
+我们可以通过代码开启新的线程  可以用时运行代码的多条“管道” 就叫多线程       
+
+### 语法相关
+
+```csharp
+//线程类 Thread
+//需要引用System.Threading命名空间
+//1.申明一个新的线程 注意线程执行的代码需要封装到一个函数中
+Thread thread = new Thread(() =>
+{
+    //新线程 将要执行的代码逻辑 被封装进这个语句块中 和主函数就没有关系了
+    Console.WriteLine("123");
+}); //将委托作为参数传入
+
+//2.启动线程
+thread.Start();
+
+//3.设置为后台线程（即主线程结束时 后台线程也会被结束）如果不设置为后台线程 可能会导致进程无法正常结束
+thread.IsBackground = true;
+
+//4.关闭释放一个线程  如果开启的线程不是死循环 那么不需要刻意去关闭它 
+//1.用bool变量控制线程是否执行
+bool isRunning = true;
+thread.Start(() =>
+{
+    while (isRunning)
+    {
+        Console.WriteLine("123");
+    }
+});
+
+bool isRunning = false;
+
+//2.通过线程提供的Abort方法关闭线程 （注意在.Net core版本中无法终止 会报错）
+thread.Abort();
+thread = null;
+
+//5.线程休眠  单位是毫秒  在哪个线程中调用 就会在哪个线程中休眠
+Thread.Sleep(1000);
+```
+
+### 线程之间共享数据
+
+多个线程使用的内存是共享的 所以在多线程中需要注意数据的同步问题 
+
+可以通过加锁来解决线程之间的数据问题  即在访问共享数据时 加上锁 确保只有一个线程可以访问共享数据
+
+```csharp
+//1.用lock关键字加锁 
+//在访问共享数据时 加上锁 确保只有一个线程可以访问共享数据
+//lock(引用类型对象)
+int value = 0;
+void Increment()
+{
+    lock (this)
+    {
+        value++;
+    }
+}
+```
+
+### 多线程的意义
+
+可以专门处理一些复杂耗时的逻辑 比如寻路 网路通信等  
+
+## 预处理器指令 
+
+预处理器指令指导编译器在实际编译开始之前对信息进行预处理    
+预处理器指令都是以#开始 
+预处理器指令不是语句，所以它们不以分号;结束    
+
+### 常见的预处理器指令
+
+```csharp
+//1. #define 定义宏
+#define MACRO_NAME 123
+#undef MACRO_NAME //取消宏定义 这两个通常配合#if和#endif使用
+
+//2.#if #elif #else #endif条件编译
+#if MACRO_NAME == 123
+    //如果MACRO_NAME等于123 则编译这里的内容
+#endif //如果MACRO_NAME不等于123 则不编译这里的内容
+
+//3.#warning 警告 #error 错误
+#warning 这是一个警告
+#error 这是一个错误
+```
+
+## 反射 
+
+### 程序集
+
+程序集是由编译器编译得到的，供进一步编译执行的那个中间产物  
+在Windows系统中，他一般表现为后缀为.dll的文件或.exe文件     
+
+
+### 元数据  
+
+元数据就是用来描述数据的数据  这个概念不仅应用于程序上 在别的领域也有元数据 
+简单来说 程序中的类，类中的函数、变量等等信息就是 程序的 元数据 
+
+### 反射的概念  
+
+程序正在运行时 可以查看其他程序集或者自身的元数据  
+一个运行的程序查看本身或者其他程序的元数据的行为就叫做反射      
+
+### 反射的作用      
+
+因为反射可以在程序编译后获得信息工所以它提高了程序的拓展性和灵活性  
+1.程序运行时得到所有元数据，包括元数据的特性    
+2.程序运行时，实例化对象，操作对象  
+3.程序运行时创建新对象，用这些对象执行任务  
+
+### 语法相关  
+
+#### Type
+
+Type（类的信息类）  
+它是反射功能的基础！    
+它是访问元数据的主要方式。  
+使用Type的成员获取有关类型声明的信息    
+有关类型的成员（如构造函数、方法、字段、属性和类的事件）    
+
+获取Type:
+```csharp
+//1.通过类型名获取Type
+Type type = typeof(int);
+
+//2.通过对象实例获取Type
+Type type = obj.GetType();
+
+//3.通过类的命名获取Type（需要引用命名空间）
+Type type = Type.GetType("System.Int32");
+
+//得到类的程序集信息
+Assembly assembly = type.Assembly;
+
+//获取类中的所有公共成员
+class Test
+{
+    public int a = 1;
+    public string b = "hello";
+    private int c = 2;
+
+    public Test()
+    {
+
+    }
+
+    public Test(int a)
+    {
+        this.a = a;
+    }
+
+    public Test(int a, string b):this(a)
+    {
+        this.b = b;
+    }
+
+    public void Func()
+    {
+
+    }
+}
+
+Type testType = typeof(Test);
+
+//得到公共成员需要引用System.Reflection命名空间
+MemberInfo[] members = testType.GetMembers();
+
+//遍历成员
+foreach (MemberInfo member in members)
+{
+    Console.WriteLine(member.Name);
+}
+
+//获取类的构造函数
+ConstructorInfo[] constructors = testType.GetConstructors();
+
+//遍历构造函数
+foreach (ConstructorInfo constructor in constructors)
+{
+    Console.WriteLine(constructor.Name);
+}
+
+//获取其中一个构造函数 并执行
+//获取构造函数传入 Type数组 数组中按内容按顺序是参数类型    
+//执行构造函数传入 object数组 表示按顺序传入的参数
+//得到无参构造函数
+ConstructorInfo constructor = testType.GetConstructor(new Type[] { });
+
+//执行构造函数
+Test test = constructor.Invoke(null) as Test;
+
+//得到有参构造函数
+ConstructorInfo constructor1 = testType.GetConstructor(new Type[] { typeof(int), typeof(string) });
+//执行构造函数
+test = constructor1.Invoke(new object[] { 123, "hello" }) as Test;
+
+//获取类的公共成员变量
+FieldInfo[] fields = testType.GetFields();
+//遍历成员变量
+foreach (FieldInfo field in fields)
+{
+    Console.WriteLine(field.Name);
+}
+
+//获取指定一个公共成员变量
+//获取成员变量传入字符串 表示成员变量的名称
+FieldInfo fieldA = testType.GetField("a");
+//执行成员变量
+Test test1 = new Test;
+int value = (int)fieldA.GetValue(test1);
+
+//设置成员变量的值
+fieldA.SetValue(test1, 100); //设置成员变量a的值为100
+
+//获取类中的成员方法
+MethodInfo[] methods = testType.GetMethods();
+//遍历成员方法
+foreach (MethodInfo method in methods)
+{
+    Console.WriteLine(method.Name);
+}
+
+//如果方法存在重载  用Type数组表示参数类型
+Type strType = typeof(string);
+
+MethodInfo subStr = testType.GetMethod("Substring", new Type[] { typeof(int), typeof(int) });
+
+string str = "hello world";
+//调用方法
+object subStr1 = subStr.Invoke(str, new object[] { 0, 5 });
+Console.WriteLine(subStr1); //hello
+
+//其他的还有 
+//获得枚举
+EnumInfo[] enums = testType.GetEnums();
+
+//获得事件
+EventInfo[] events = testType.GetEvents();
+
+//获得属性
+PropertyInfo[] properties = testType.GetProperties();
+
+//获得接口
+InterfaceInfo[] interfaces = testType.GetInterfaces();
+```
+
+#### Activator
+
+用于快速实例化对象的类  
+用于将Type对象快捷实例化为对象  
+先得到Type  
+然后快速实例化一个对象  
+
+```csharp
+class Test
+{
+    public int a = 1;
+    public string b = "hello";
+    private int c = 2;
+
+    public Test()
+    {
+
+    }
+
+    public Test(int a)
+    {
+        this.a = a;
+    }
+
+    public Test(int a, string b):this(a)
+    {
+        this.b = b;
+    }
+
+    public void Func()
+    {
+
+    }
+}
+//1.无参构造
+Type testType = typeof(Test);
+Test testObj = Activator.CreateInstance(testType) as Test;
+
+//2.有参构造
+testObj = Activator.CreateInstance(testType,99) as Test; //调用一个参数构造函数
+testObj = Activator.CreateInstance(testType,99,"hello") as Test; //调用两个参数构造函数
+```
+
+#### Assembly 
+
+程序集类    
+主要用来加载其它程序集，加载后才能用Type来使用其它程序集中的信息    
+如果想要使用不是自己程序集中的内容需要先加载程序集  
+比如d11文件（库文件）   
+简单的把库文件看成一种代码仓库，它提供给使用者一些可以直接拿来用的变量、函数或类    
+三种加载程序集的函数    
+般用来加载在同一文件下的其它程序集  
+Assemblyasembly2 = Assembly.Load("程序集名称");   
+一般用来加载不在同一文件下的其它程序集  
+Assemblyasembly = Assembly.LoadFrom（"包含程序集清单的文件的名称或路径"）；   
+Assemblyasembly3 = Assembly.LoadFile（"要加载的文件的完全限定路径"）；    
+
+
+```csharp
+// 需要引用 System.Reflection 命名空间
+using System.Reflection;
+
+// ========== 1. Assembly.Load — 加载当前目录下的程序集 ==========
+// 假设有一个外部类库项目 MyLibrary，编译后生成 MyLibrary.dll
+// MyLibrary.dll 中定义了一个 Calculator 类：
+//
+// namespace MyLibrary
+// {
+//     public class Calculator
+//     {
+//         public int Add(int a, int b) => a + b;
+//         public int Multiply(int a, int b) => a * b;
+//     }
+// }
+
+Assembly asm1 = Assembly.Load("MyLibrary"); // 通过程序集名称加载（不含 .dll 后缀）
+
+// ========== 2. Assembly.LoadFrom — 通过路径加载 ==========
+Assembly asm2 = Assembly.LoadFrom(@"C:\Libs\MyLibrary.dll");
+
+// ========== 3. Assembly.LoadFile — 加载指定路径的程序集 ==========
+Assembly asm3 = Assembly.LoadFile(@"C:\Libs\MyLibrary.dll");
+
+// ========== 使用加载的程序集中的类型 ==========
+
+// 获取程序集中的类型（通过完整类名：命名空间.类名）
+Type calcType = asm1.GetType("MyLibrary.Calculator");
+
+// 通过 Activator 创建该类型的实例
+object calcObj = Activator.CreateInstance(calcType);
+
+// 获取方法信息
+MethodInfo addMethod = calcType.GetMethod("Add");
+MethodInfo multiplyMethod = calcType.GetMethod("Multiply");
+
+// 调用方法（Invoke：参数1为实例对象，参数2为方法参数数组）
+object result1 = addMethod.Invoke(calcObj, new object[] { 10, 20 });
+Console.WriteLine($"10 + 20 = {result1}"); // 输出：10 + 20 = 30
+
+object result2 = multiplyMethod.Invoke(calcObj, new object[] { 5, 6 });
+Console.WriteLine($"5 * 6 = {result2}"); // 输出：5 * 6 = 30
+
+// ========== 遍历程序集中所有公开类型 ==========
+Type[] types = asm1.GetExportedTypes();
+foreach (Type t in types)
+{
+    Console.WriteLine($"类型名: {t.FullName}");
+
+    // 遍历该类型的所有公开方法
+    foreach (MethodInfo method in t.GetMethods())
+    {
+        Console.WriteLine($"  方法: {method.Name}, 返回值: {method.ReturnType.Name}");
+    }
+}
+
+// ========== 获取并设置属性 ==========
+// 假设 Calculator 类有一个属性：public string Name { get; set; }
+PropertyInfo nameProp = calcType.GetProperty("Name");
+if (nameProp != null)
+{
+    nameProp.SetValue(calcObj, "我的计算器");
+    Console.WriteLine($"Name = {nameProp.GetValue(calcObj)}");
+}
+```
+
+## 特性     
+
+特性是一种允许我们向程序的程序集添加元数据的语言结构    
+它是用于保存程序结构信息的某种特殊类型的类  
+特性提供功能强大的方法以将声明信息与#代码（类型、方法、属性等）相关联。 
+特性与程序实体关联后，即可在运行时使用反射查询特性信息  
+特性的目的是告诉编译器把程序结构的某组元数据嵌入程序集中    
+它可以放置在几乎所有的声明中（类、变量、函数等等申明）  
+
+### 自定义特性
+
+```csharp
+//继承特性基类 Attribute
+public class MyAttribute : Attribute
+{
+    //特性中的成员
+    public string name;
+
+    //特性中的构造函数
+    public MyAttribute(string name)
+    {
+        this.name = name;
+    }
+}
+```
+
+### 特性的使用
+
+```csharp
+//基本语法
+//[特性名(参数列表)]
+//写在哪里
+//类、函数、变量上一行 表示他们具有该特性信息
+
+[MyAttribute("这是一个测试类")]
+class Test
+{
+    [MyAttribute("这是一个测试成员变量")]
+    public int a = 100;
+
+    [MyAttribute("这是一个测试方法")]
+    public void TestMethod([MyAttribute("这是一个测试方法参数")] int a)
+    {
+
+    }
+}
+
+//判断是否有特性信息
+class Program
+{
+    static void Main(string[] args)
+    {
+        Type testType = typeof(Test);
+        //Isdefined 第一个参数为特性类型，第二个参数为是否继承特性
+        if(testType.IsDefined(typeof(MyAttribute), false))
+        {
+            Console.WriteLine("测试类具有 MyAttribute 特性");
+        }
+        
+        //获取元数据中的所有特性
+        object[] attributes = testType.GetCustomAttributes(typeof(MyAttribute), false);
+        foreach (object attribute in attributes)
+        {
+            if(attribute is MyAttribute)
+            {
+                Console.WriteLine((attribute as MyAttribute).name);
+            }
+        }
+
+
+    }
+}
+```
+
+### 限制自定义特性的使用范围
+
+```csharp
+//通过为特性类 加特性 来限制特性使用范围
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, AllowMultiple = true, Inherited = true)]
+//参数一：AttributeTargets 特性使用范围
+//参数二：AllowMultiple 是否允许重复使用特性
+//参数三：Inherited 是否继承特性
+
+```
+
+### 系统自带的特性
+
+```csharp
+//过时特性
+//Obsolete
+//用于标记过时的代码，提示开发者使用新的代码 一般加在函数前
+
+class Test
+{
+    [Obsolete("请使用 New 方法"),false]
+    //参数一：提示信息
+    //参数二：true 使用Old会直接报错，false 不会报错
+    public void Old()
+    {
+
+    }
+
+    public void New()
+    {
+
+    }
+
+    public void TestMethod([CallerMemberName] string methodName, [CallerLineNumber] int lineNumber, [CallerFilePath] string filePath)
+    {
+        Console.WriteLine($"调用者信息：{methodName}，{lineNumber}，{filePath}");
+    }
+}
+
+//调用者信息特性
+//哪个文件调用
+//CallerMemberName
+//哪一行调用
+//CallerLineNumber
+//哪个函数调用
+//CallerMemberName
+
+//需要引用 System.Runtime.CompilerServices 命名空间
+//一般作为函数参数的特性
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Test test = new Test();
+        test.TestMethod(); // 输出：调用者信息：Main，2239，C:\Users\shinjayo\Desktop\blog\Firefly\content\posts\csharpstudy2.md
+    }
+}
+```
+
+```csharp
+//条件编译特性
+//Conditional
+//他会和预处理器指令 #define 一起使用，来根据不同的编译环境来编译不同的代码
+
+class Test
+{
+    [Conditional("DEBUG")]
+    public void TestMethod()
+    {
+        Console.WriteLine("DEBUG 环境下编译");
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Test test = new Test();
+        test.TestMethod(); // 需要由#define DEBUG 才会输出：DEBUG 环境下编译
+    }
+}
+
+//外部DLL包函数特性
+//DllImport
+//用来标记非.Net（非C#）函数，表明该函数在一个外部DLL中定义
+//一般用来调用C或C++的DLL包编写好的方法
+//需要引用命名空间 System.Runtime.InteropServices 命名空间
+
+[DllImport("msvcrt.dll")] // 调用C++的printf函数
+public static extern int printf(string format, params object[] args);
+
+```
+
+## 迭代器
+
+迭代器（iterator）有时又称光标（cursor）  是程序设计的软件设计模式    
+迭代器模式提供一个方法顺序访问一个聚合对象中的各个元素  而又不暴露其内部的标识  
+
+在表现效果上看  
+迭代器是可以在容器对象（例如链表或数组）上遍历访问的接口  
+设计人员无需关心容器对象的内存分配的实现细节    
+可以用foreach遍历的类，都是实现了迭代器的   
+
+### 标准迭代器的实现方法    
+
+```csharp
+//关键接口：IEnumerator,IEnumerable
+//命名空间：System.Collections.Generic
+//可以通过同时继承IEnumerator,IEnumerable 来实现其中的方法
+
+class CustomList:IEnumerable,IEnumerator
+{
+    private int[] list;
+    private int currentIndex = -1;
+
+    public CustomList()
+    {
+        list = new int[10] {1,2,3,4,5,6,7,8,9,10};
+    }
+
+    public IEnumerator GetEnumerator()
+    {
+        Reset();
+        return this;
+    }
+
+    public object Current 
+    {
+        get
+        {
+            return list[currentIndex];
+        }
+    };
+
+    public bool MoveNext()
+    {
+        //移动光标
+        ++currentIndex;
+        //判断是否溢出 如果溢出 则返回false
+        return currentIndex < list.Length;
+    }
+
+    //重置光标 一般写在IEnumerator对象的函数中 用于第一次重置光标位置
+    public void Reset()
+    {
+        currentIndex = -1;
+    }
+}
+
+CustomList customList = new CustomList();
+
+//foreach本质
+//1.先获取in后面对象的IEnumerator接口 会调用对象中的GetEnumerator方法 来获取
+//2.执行IEnumerator对象中的 MoveNext方法
+//3.只要MoveNext返回值是true 就会去得到Current 然后复制给Item
+foreach (var item in customList)
+{
+    Console.WriteLine(item);
+}
+```
+
+### 用yield return 实现迭代器
+
+yieldreturn是c#提供给我们的语法糖   
+所谓语法糖，也称糖衣语法    
+主要作用就是将复杂逻辑简单化，可以增加程序的可读性  
+从而减少程序代码出错的机会  
+关键接口：IEnumerable   
+命名空间：usingSystem.Collections;  
+让想要通过foreach遍历的自定义类实现接口中的方法GetEnumerator即可    
+
+```csharp
+class CustomList2:IEnumerable
+{
+    private int[] list;
+    private int currentIndex = -1;
+
+    public CustomList2()
+    {
+        list = new int[10] {1,2,3,4,5,6,7,8,9,10};
+    }
+
+    public IEnumerator GetEnumerator()
+    {
+        for (int i = 0; i < list.Length; i++)
+        {
+            //yield关键字 配合迭代器使用
+            //可以理解为 暂时返回 保留当前状态
+            //一会还会回来当前状态
+            yield return list[i];
+        }
+    }
+}
+```
+
+## 特殊语法  
+
+### var隐式类型
+
+var是一种特殊的变量类型 
+它可以用来表示任意类型的变量    
+注意：  
+1.var不能作为类的成员只能用于临时变量申明时 
+也就是一般写在函数语句块中  
+2.var必须初始化 
+
+```csharp
+var a = 10;
+var b = "hello";
+var c = new int[] {1,2,3,4,5};
+var d = new List<int>();
+```
+
+### 设置对象初始值
+
+```csharp
+//申明对象时 可以直接通过写大括号的形式来初始化公共成员变量和属性
+class Person
+{
+    public int age;
+    public string name; 
+}
+
+Person person = new Person {age = 18, name = "张三"};
+
+//集合也可以用大括号申明
+ var list = new List<int> {1,2,3,4,5};
+
+ //匿名类型 
+ //var 变量可以申明为自定义的匿名类型
+ var anonymous = new {age = 18, name = "张三"};
+
+ //可空类型
+ //值类型是不可空的 但是可以使用可空类型来表示可空的值
+ int? a = 10;   //a可以是10 也可以是null
+ int? b = null; 
+
+ //判断是否可空类型是否有值
+ if(a.HasValue)
+ {
+    Console.WriteLine(a.Value);
+ }
+
+ //安全获取可空类型的值
+ Console.WriteLine(a.GetValueOrDefault());
+ Console.WriteLine(b.GetValueOrDefault(100)); //指定默认值为100
+
+ //引用类型判断是否为空
+ object obj = null;
+
+ obj?.ToString(); //如果obj为空 则不会调用ToString方法
+
+```
+
+### 空合并操作符 
+
+```csharp
+//空合并操作符 ?? 
+//左边值 ?? 右边值
+//如果左边值为null 则返回右边值
+//如果左边值不为null 则返回左边值 
+//只要是可以为null的类型都能用
+int? a = null;
+int b = 100;
+int c = a ?? b;
+Console.WriteLine(c); //100
+```
+
+### 内插字符串
+
+//关键符号 $
+//用$来构造字符串 让字符串可以拼接变量 
+
+```csharp
+
+string str = "hello";
+Console.WriteLine($"hello {str}"); //输出hello hello
+```
+
+## 值类型和引用类型
+
+值类型  
+无符号:byte,ushort,uint,ulong   
+有符号：sbyte,short，int,long   
+浮点数：float，double,decimal   
+特殊:char,bool  
+枚举：enum  
+结构体:struct   
+
+引用类型    
+string  
+数组    
+class   
+interface   
+委托    
+
+值类型和引用类型的本质区：别值的具体内容存在栈内存上，引用的具体内容存在堆内存上    
+
 
