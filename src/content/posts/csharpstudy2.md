@@ -2480,4 +2480,306 @@ interface
 
 值类型和引用类型的本质区：别值的具体内容存在栈内存上，引用的具体内容存在堆内存上    
 
+## 各种排序算法
 
+```csharp
+using System;
+
+namespace Lesson
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            int[] arr = new int[] { 4, 2, 7, 2, 6, 9, 5, 1, 2, 4, 7 };
+            SelectionSort(arr);
+
+            for (int i = 0; i < arr.Length; i++)
+            {
+                Console.WriteLine(arr[i]);
+            }
+        }
+
+        //冒泡排序
+        //将数组的元素进行两两比较 大的元素放在小的后面
+        //循环进行 找出最大元素放在最大位置
+        //本质上是一次循环确认一个元素的最终位置
+        static void BubbleSort(int[] arr)
+        {
+            for(int i = 0; i < arr.Length; i++)
+            {
+                for(int j = 1; j < arr.Length - i; j++)
+                {
+                    if (arr[j] < arr[j - 1])
+                    {
+                        int temp = arr[j];
+                        arr[j] = arr[j - 1];
+                        arr[j - 1] = temp;
+                    }
+                }
+            }
+        }
+
+        //选择排序
+        //拿一个max指针记录最大元素值
+        //在每一次比较中更新这个max指针
+        //内层循环结束后将他与数组的最大位置互换
+        //本质上也是是一次循环确认一个元素的最终位置
+        static void SelectionSort(int[] arr)
+        {
+            for(int i=0; i<arr.Length; i++)
+            {
+                int max = 0;
+                for(int j = 0; j < arr.Length-i; j++)
+                {
+                    if(arr[j] > arr[max])
+                    {
+                        max = j;
+                    }
+                }
+
+                int temp = arr[arr.Length - i - 1];
+                arr[arr.Length - i-1] = arr[max];
+                arr[max] = temp;
+            }
+        }
+
+        //插入排序
+        //将数组分为已排序区和待排序区
+        //从待排序中取出首个元素与已排序区元素进行比较放在对应位置、
+        //重复n次即可完成排序
+        //本质上是小有序数组=>大有序数组
+        static void InsertSort(int[] arr)
+        {
+            //重复n次
+            for (int i = 1; i < arr.Length; i++)
+            {
+                //记录已排序区索引
+                int sortIndex = i - 1;
+                //取出未排序区元素
+                int noSortNum = arr[i];
+
+                //升序排序 找到待排序元素应该插入的位置
+                while (sortIndex >= 0 && arr[sortIndex] > noSortNum)
+                {
+                    //将已排序元素后移 给待排序元素腾出位置
+                    arr[sortIndex + 1] = arr[sortIndex];
+                    --sortIndex;
+                }
+                //放入正确位置
+                arr[sortIndex + 1] = noSortNum;
+            }
+
+        }
+
+        //希尔排序
+        //本质上还是插入排序 只是引入了步长的概念 
+        //将间隔步长相等的元素作为一组 在组内进行插入排序
+        //循环缩小步长 再次进行插入排序
+        //本质上也是小有序数组=>大有序数组
+        static void ShellSort(int[] arr)
+        {
+            int step = arr.Length;
+            //设置补偿 每一次循环都除以2
+            while ((step /= 2) != 0)
+            {
+                //这一段就是插入排序
+                for (int i = step; i < arr.Length; i++)
+                {
+                    int noSortNum = arr[i];
+                    int sortIndex = i - step;
+
+                    while (sortIndex >= 0 && arr[sortIndex] > noSortNum)
+                    {
+                        arr[sortIndex + 1] = arr[sortIndex];
+                        sortIndex -= step;
+                    }
+                    arr[sortIndex + step] = noSortNum;
+                }
+            }
+        }
+
+        //归并排序
+        //将数组从中间进行递归划分 直到划分的数组两边都只有一个元素
+        //将分成两份的左右数组内元素进行依次比较 按大小放入新数组中
+        //递归进行 本质上也是小有序数组=>大有序数组
+        static int[] Merge(int[] arr)
+        {
+            //递归结束条件
+            if (arr.Length < 2)
+            {
+                return arr;
+            }
+
+            //从中间将数组划为两部分
+            int mid = arr.Length / 2;
+
+            int[] leftArr = new int[mid];  
+            int[] rightArr = new int[arr.Length - mid];
+
+            //左右数组初始化
+            for(int i = 0; i < arr.Length; i++)
+            {
+                if (i < mid)
+                {
+                    leftArr[i] = arr[i];
+                }
+                else
+                {
+                    rightArr[i-mid] = arr[i];
+                }
+            }
+            //递归进行
+            return Sort(Merge(leftArr), Merge(rightArr));
+        }
+
+        static int[] Sort(int[] leftArr, int[] rightArr)
+        {
+            //建立新的数组
+            int[] newArr = new int[leftArr.Length + rightArr.Length];
+            int left = 0;
+            int right = 0;
+
+            for(int i = 0; i < newArr.Length; i++)
+            {
+                //当左数组全部放进去后 说明右数组内的数全部大于左数组依次放入即可
+                if (left >= leftArr.Length)
+                {
+                    for(int j = i; j < newArr.Length; j++)
+                    {
+                        newArr[j] = rightArr[right];
+                        right++;
+                    }
+                    //中断最外层for循环以免越界
+                    break;
+                }
+
+                //当右数组全部放进去后 说明左数组内的数全部大于右数组依次放入即可
+                if (right >= rightArr.Length)
+                {
+                    for (int j = i; j < newArr.Length; j++)
+                    {
+                        newArr[j] = leftArr[left];
+                        left++;
+                    }
+                    break;
+                }
+
+                //比较左右数组 小的放入新数组中
+                if (leftArr[left] <= rightArr[right])
+                {
+                    newArr[i] = leftArr[left];
+                    left++;
+                }
+                else if(leftArr[left] > rightArr[right])
+                {
+                    newArr[i] = rightArr[right];
+                    right++;
+                }
+            }
+
+            return newArr;
+        }
+
+        //快速排序
+        //选出一个基准元素（一般是数组的第一个元素）
+        //设置左右两个指针 将指针所指到的数组元素与基准元素比较 
+        //（升序排序）右指针元素小于基准元素则将其放入左指针所指位置中 不满足则指针左移
+        //注意这里由于左指针一开始所指位置为基准元素的位置 故可认为左指针所指位置一开始为空
+        //左指针元素大于基准元素则将其放入右指针所指位置中 不满足则指针右移
+        //直到左右指针所指位置重合 将基准元素放入重合位置 确认了一个元素的最终位置
+        //从基准元素那将数组分为左右两个数组一次进行递归上述步骤 即可
+        //本质上是依次将元素放到最终的正确位置上 一次递归放一个元素
+        static void QuickSort(int[] arr, int low, int high)
+        {
+            //递归终止条件
+            if (low >= high)
+            {
+                return;
+            }
+
+            //  确认左右指针 基准元素
+            int left = low;
+            int right = high - 1 ;
+            int baseNum = arr[low];
+
+            while (left < right)
+            {
+                //判断右指针所指元素是否大于基准元素 满足则将右指针左移
+                while (left < right && arr[right] >= baseNum) right--;
+                //找到不满足的位置 将其放入左指针所指位置中
+                if (left < right) arr[left] = arr[right];
+
+                //判断左指针所指元素是否小于基准元素 满足则将左指针右移
+                while (left < right && arr[left] <= baseNum) left++;
+                //找到不满足的位置 将其放入右指针所指位置中
+                if (left < right) arr[right] = arr[left];
+            }
+
+            //将基准元素放入最终位置
+            arr[right] = baseNum;
+
+            //左右数组递归进行排序
+            QuickSort(arr, low, left-1);
+            QuickSort(arr, left + 1, high);
+        }
+
+
+        //堆排序
+        //依赖于最大堆性质
+        //将数组递归建立为最大堆 每次建立完成后取出堆顶的元素放入数组的n-i位置中
+        //n为数组长度 i为递归次数
+        //本质上是每一次递归中确立一个元素的最终位置
+        static void Heapify(int[] arr, int n, int i)
+        {
+            int largest = i;     // 假设当前节点是最大的
+            int left = 2 * i + 1; // 左子节点
+            int right = 2 * i + 2; // 右子节点
+
+            // 如果左子节点存在且大于当前最大，则更新
+            if (left < n && arr[left] > arr[largest])
+                largest = left;
+
+            // 如果右子节点存在且大于当前最大，则更新
+            if (right < n && arr[right] > arr[largest])
+                largest = right;
+
+            // 如果最大值不是父节点本身，说明需要交换
+            if (largest != i)
+            {
+                // 交换父节点和较大的子节点
+                int temp = arr[i];
+                arr[i] = arr[largest];
+                arr[largest] = temp;
+
+                // 递归下沉，确保交换后的子树依然满足堆性质
+                Heapify(arr, n, largest);
+            }
+        }
+        static void HeapSort(int[] arr)
+        {
+            int n = arr.Length;
+
+            // ---------- 阶段一：构建最大堆 ----------
+            // 从最后一个非叶子节点开始（n/2 - 1），从下往上 Heapify
+            for (int i = n / 2 - 1; i >= 0; i--)
+            {
+                Heapify(arr, n, i);
+            }
+
+            // ---------- 阶段二：排序（提取最大值） ----------
+            // 将堆顶（最大值）依次移到数组末尾，然后缩小堆大小
+            for (int i = n - 1; i > 0; i--)
+            {
+                // 将当前堆顶（最大值）与堆末尾元素交换
+                int temp = arr[0];
+                arr[0] = arr[i];
+                arr[i] = temp;
+
+                // 缩小堆范围，重新调整堆顶（0 索引）使其满足最大堆
+                Heapify(arr, i, 0);
+            }
+        }
+    }
+}
+```
