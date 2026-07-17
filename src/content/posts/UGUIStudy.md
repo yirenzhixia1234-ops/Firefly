@@ -2,7 +2,7 @@
 title: UGUI学习
 published: 2026-07-16
 pinned: false
-description: 
+description: Unity UGUI学习 - Canvas、RectTransform、EventSystem等组件
 tags: [Unity,学习,UI]
 author: boluobao
 draft: true

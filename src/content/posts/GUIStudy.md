@@ -2,7 +2,7 @@
 title: GUI学习
 published: 2026-07-15
 pinned: false
-description: 
+description: Unity GUI学习 - IMGUI系统知识
 tags: [Unity,学习,UI]
 author: boluobao
 draft: false

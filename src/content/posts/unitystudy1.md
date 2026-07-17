@@ -2,7 +2,7 @@
 title: Unity学习笔记1
 published: 2026-07-14
 pinned: false
-description: 
+description: Unity学习笔记1 - Unity编辑器、GameObject、组件系统等基础
 tags: [Unity,学习]
 author: boluobao
 draft: false
