@@ -484,7 +484,7 @@ void Start()
 
 ```csharp
 //将坐标从世界坐标系转换为本地坐标系
-Vector3 localPos = this.transform.InverseTransformPoint(Vector3.zero); //将世界坐标系的点转换为本地坐标系的点
+Vector3 localPos = this.transform.InverseTransformPoint(Vector3.zero); //将世界坐标系的点转换为本地坐标系的点 受缩放影响
 
 Vector3 localDir = this.transform.InverseTransformDirection(Vector3.right); //将世界坐标系的向量转换为本地坐标系的向量 不受缩放影响
 Vector3 localDirScale = this.transform.InverseTransformVector(Vector3.right); //将世界坐标系的向量转换为本地坐标系的向量 受缩放影响
@@ -1148,3 +1148,529 @@ public class CustomEventDemo : MonoBehaviour
 
 > [!NOTE] 命名空间
 > `UnityAction` 和 `UnityEvent` 都位于 `UnityEngine.Events` 命名空间，使用前需要 `using UnityEngine.Events;`。
+
+## ⚙️ Rigidbody 刚体组件
+
+Rigidbody 是 Unity **物理系统的核心组件**。为 GameObject 添加 Rigidbody 后，该物体就会受到物理引擎的控制——受到重力、可以接收力、参与碰撞反馈。
+
+> [!IMPORTANT] 必备条件
+> 物体必须**同时拥有 Collider（碰撞器）**，否则物理交互不会生效。没有 Rigidbody 的物体即使挂载了 Collider 也只是"静态碰撞体"，不会产生运动反馈。
+
+---
+
+### 📋 Inspector 面板参数详解
+
+#### Mass —— 质量
+
+物体的质量，单位随意（相对值）。
+
+```csharp
+Rigidbody rb = GetComponent<Rigidbody>();
+rb.mass = 10f;
+```
+
+- 质量影响**碰撞时的冲量计算**（质量越大，被撞后位移越小）
+- 质量**不影响重力下落速度**（Unity 物理引擎中所有物体重力加速度相同）
+- 建议将质量范围控制在 **0.1 ~ 10**，避免极端值导致物理不稳定
+
+#### Drag —— 移动阻力
+
+模拟物体移动时受到的空气阻力/流体阻力。
+
+```csharp
+rb.drag = 1f;  // 值越大，物体减速越快
+```
+
+| Drag 值 | 效果 |
+|:--:|------|
+| **0** | 无阻力，物体永远保持当前速度（真空环境） |
+| **0.5 ~ 2** | 适中阻力，物体逐渐减速 |
+| **> 5** | 强阻力，类似水中运动 |
+
+#### Angular Drag —— 角阻力
+
+与 Drag 同理，但作用于**旋转角速度**。
+
+```csharp
+rb.angularDrag = 0.5f;  // 值越大，旋转停止越快
+```
+
+#### Use Gravity —— 是否使用重力
+
+```csharp
+rb.useGravity = true;   // 受重力影响（默认）
+rb.useGravity = false;  // 不受重力，悬浮在空中
+```
+
+- 默认重力在 `Edit → Project Settings → Physics` 中设置，默认为 `(0, -9.81, 0)`
+- 关闭后适合飞行物体、太空场景、UI 元素等
+
+#### Is Kinematic —— 是否为运动学刚体
+
+```csharp
+rb.isKinematic = true;  // 不受物理引擎力的影响，只通过代码控制运动
+```
+
+| 特性 | 普通刚体 (Dynamic) | 运动学刚体 (Kinematic) |
+|------|:--:|:--:|
+| 受重力 | ✅ | ❌ |
+| 受力影响 (AddForce) | ✅ | ❌ |
+| 碰撞推动 | 被推动 | 不被推动，但可推动其他物体 |
+| 控制方式 | `AddForce` / `velocity` | `MovePosition` / `MoveRotation` |
+| 性能开销 | 每帧物理计算 | 仅在碰撞时参与，性能更好 |
+
+> [!TIP] 典型用途
+> 移动平台、电梯、被玩家直接控制的角色、自动门、机关等 —— 这些物体不应被物理力推动，应设为 Kinematic。
+
+#### Interpolate —— 插值模式
+
+解决刚体运动时画面**抖动/卡顿**的问题（物理更新频率与渲染帧率不同步导致）。
+
+```csharp
+rb.interpolation = RigidbodyInterpolation.None;        // 无插值（默认）
+rb.interpolation = RigidbodyInterpolation.Interpolate;  // 根据上一帧位置插值
+rb.interpolation = RigidbodyInterpolation.Extrapolate;  // 根据速度推测下一帧位置
+```
+
+| 模式 | 原理 | 适用场景 |
+|------|------|------|
+| **None** | 不做处理 | 静止物体 |
+| **Interpolate** | 在渲染帧之间平滑插值 | 玩家控制的角色、摄像机跟随 |
+| **Extrapolate** | 基于速度外推位置 | 快速飞行的子弹/抛射物 |
+
+#### Collision Detection —— 碰撞检测模式
+
+```csharp
+rb.collisionDetectionMode = CollisionDetectionMode.Discrete;              // 离散检测（默认）
+rb.collisionDetectionMode = CollisionDetectionMode.Continuous;            // 连续检测
+rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;     // 连续动态检测
+rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative; // 连续推测检测
+```
+
+| 模式 | 检测方式 | 性能 | 适用场景 |
+|------|------|:--:|------|
+| **Discrete** | 每 FixedUpdate 检测一次 | 🟢 最低 | 静止的地面/墙壁 |
+| **Continuous** | 与静态几何体做连续检测 | 🟡 中 | 玩家角色 |
+| **ContinuousDynamic** | 与所有刚体做连续检测 | 🔴 高 | 高速子弹 |
+| **ContinuousSpeculative** | 基于速度推测检测 | 🟡 中 | 速度较快的小物体 |
+
+> [!WARNING] Tunneling（穿透）问题
+> 快速物体单帧位移超过 Collider 厚度时会直接穿透。解决方案：使用连续碰撞检测 + 适当增大 Collider 厚度。
+
+#### Constraints —— 冻结位置/旋转轴
+
+限制刚体在某个轴上的移动或旋转。
+
+```csharp
+// 冻结 Y 轴移动
+rb.constraints = RigidbodyConstraints.FreezePositionY;
+
+// 冻结所有旋转（防止摔倒）
+rb.constraints = RigidbodyConstraints.FreezeRotation;
+
+// 组合冻结（用 | 位运算组合多个约束）
+rb.constraints = RigidbodyConstraints.FreezePositionX 
+               | RigidbodyConstraints.FreezePositionZ 
+               | RigidbodyConstraints.FreezeRotationY;
+
+// FPS 角色常用：冻结所有旋转 + 冻结 Y 轴位置
+rb.constraints = RigidbodyConstraints.FreezeRotation 
+               | RigidbodyConstraints.FreezePositionY;
+```
+
+| 常用组合 | 用途 |
+|------|------|
+| `FreezeRotation` | 2D 平台角色、FPS 角色（防止摔倒） |
+| `FreezePositionY \| FreezeRotation` | 水平移动物体（保持在地面，不翻倒） |
+| `FreezePositionZ` | 横版卷轴（限定在 XY 平面） |
+| `FreezeAll` | 完全锁定，仅用于碰撞检测 |
+
+---
+
+### 💻 代码中使用 Rigidbody
+
+#### 获取刚体
+
+```csharp
+private Rigidbody rb;
+
+void Start()
+{
+    rb = GetComponent<Rigidbody>();           // 同一物体上
+    rb = GetComponentInChildren<Rigidbody>(); // 子物体上
+    rb = GetComponentInParent<Rigidbody>();   // 父物体上
+}
+```
+
+#### AddForce —— 施加力
+
+```csharp
+rb.AddForce(Vector3.forward * 100f);                          // 默认: Force（持续力）
+rb.AddForce(Vector3.forward * 100f, ForceMode.Force);          // 考虑质量的持续性力
+rb.AddForce(Vector3.forward * 100f, ForceMode.Acceleration);   // 不考虑质量的持续加速度
+rb.AddForce(Vector3.forward * 100f, ForceMode.Impulse);        // 考虑质量的瞬时冲量
+rb.AddForce(Vector3.forward * 100f, ForceMode.VelocityChange); // 不考虑质量的瞬时速度变化
+```
+
+**ForceMode 四种模式对比：**
+
+| 模式 | 受质量影响 | 时间特性 | 公式 | 适用场景 |
+|------|:--:|------|------|------|
+| **Force** | ✅ 是 | 持续力（每帧累加） | `F = m·a` | 引擎推力、推进器 |
+| **Acceleration** | ❌ 否 | 持续加速度 | `a` | 无视质量的持续加速 |
+| **Impulse** | ✅ 是 | 瞬时冲量（一次性） | `m·Δv` | 跳跃、爆炸冲击 |
+| **VelocityChange** | ❌ 否 | 瞬时速度变化 | `Δv` | 直接改速度、角色瞬移补偿 |
+
+> [!IMPORTANT] 物理操作放 FixedUpdate
+> `AddForce`、修改 `velocity` 等物理操作必须在 `FixedUpdate` 中执行，保证物理步长一致。`Input` 检测放 `Update` 中即可。
+
+#### AddExplosionForce —— 爆炸力
+
+```csharp
+// 模拟爆炸效果：从一点向四周产生推力
+rb.AddExplosionForce(
+    explosionForce: 500f,               // 爆炸力大小
+    explosionPosition: Vector3.zero,     // 爆炸中心点
+    explosionRadius: 5f,                 // 爆炸半径（超出不受力）
+    upwardsModifier: 1f,                 // 向上的额外推力倍数（>1 物体飞更高）
+    mode: ForceMode.Impulse              // 力的模式
+);
+```
+
+#### AddTorque —— 施加旋转力矩
+
+```csharp
+rb.AddTorque(Vector3.up * 50f);                     // 绕 Y 轴旋转
+rb.AddTorque(Vector3.up * 50f, ForceMode.Impulse);   // 瞬时旋转冲量
+```
+
+#### velocity / angularVelocity —— 直接设置速度
+
+```csharp
+// 直接设置线速度（瞬时覆盖当前速度）
+rb.velocity = Vector3.forward * 10f;
+
+// 直接设置角速度
+rb.angularVelocity = Vector3.up * 2f;
+
+// 保留部分速度的叠加
+rb.velocity += Vector3.up * 2f;
+```
+
+> [!WARNING]
+> `velocity` 是**直接赋值**而非叠加。在 FixedUpdate 中重复设置会使物体以恒速运动（无视阻力和碰撞反馈）。想要自然物理效果，优先用 `AddForce`。
+
+#### MovePosition / MoveRotation —— 运动学控制
+
+```csharp
+void FixedUpdate()
+{
+    // 平滑移动到目标位置（适合 Kinematic 刚体）
+    rb.MovePosition(transform.position + Vector3.forward * Time.fixedDeltaTime);
+    
+    // 平滑旋转到目标角度
+    Quaternion targetRotation = Quaternion.Euler(0, 90, 0);
+    rb.MoveRotation(targetRotation);
+}
+```
+
+- `MovePosition` / `MoveRotation` 在 FixedUpdate 中做插值，比直接设 `transform.position` 更平滑
+- 主要用于 `isKinematic = true` 的物体
+
+#### 休眠控制
+
+```csharp
+rb.Sleep();        // 强制进入休眠（停止物理计算，节省性能）
+rb.WakeUp();       // 唤醒刚体
+rb.IsSleeping();   // 检查是否在休眠状态
+```
+
+物体速度低于 Sleep Threshold 时自动休眠，远距离大量物体可通过休眠大幅降低物理开销。
+
+---
+
+### 🎯 使用建议
+
+1. **物理操作放在 FixedUpdate 中** — `AddForce`、修改 `velocity` 等应在 `FixedUpdate` 里执行
+2. **不要同时用 transform 和 Rigidbody** — 直接修改 `transform.position` 会跳过物理计算，导致碰撞异常；用 `MovePosition` 替代
+3. **速度不要过大** — 单帧位移超过 Collider 厚度会穿透，需配合连续碰撞检测
+4. **休眠优化性能** — 合理设置休眠阈值让远距离静止物体自动休眠
+5. **FreezeRotation 防摔倒** — 角色类物体勾上 FreezeRotation，避免受力失衡时摔倒
+
+## 碰撞检测
+
+### 物理碰撞检测相应函数
+
+```csharp
+//碰撞触发接触时会 自动执行这个函数
+private void OnCollisionEnter(Collision collision)
+{
+    //Collision类型的参数包含了碰到自己对象的相关信息
+    //1.碰撞到的对象碰撞器的信息
+    //collision.collider
+
+    //2.碰撞对象的依附对象
+    //collision.gameObject
+
+    //3.碰撞对象的依附对象的位置信息
+    //collision.transform
+
+    //4.碰撞点数相关
+    //collision.contactCount
+    //接触点 具体的坐标
+    //ContactPoint[] pos = collision.contacts;
+
+    Debug.Log("碰撞触发接触时会 自动执行这个函数");
+}
+
+//碰撞结束分离时触发的函数
+private void OnCollisionExit(Collision collision)
+{
+    Debug.Log("碰撞结束分离时触发的函数");
+}
+
+//两个物体相互摩擦时 会不停调用的函数
+private void OnCollisionStay(Collision collison)
+{
+    Debug.Log("两个物体相互摩擦时 会不停调用的函数")
+}
+```
+
+## 触发器检测碰撞函数
+
+```csharp
+//触发开始的函数 当第一次接触时会自动调用
+private void OnTriggerEnter(Collider other)
+{
+
+}
+
+//分离时调用的
+private void OnTriggerExit(Collider other)
+{
+
+}
+
+//一直接触时调用的
+private void OnTriggerStay(Collider other)
+{
+    
+}
+```
+
+---
+
+## 🎲 随机数
+
+Unity 中获取随机数有两种方式：**UnityEngine.Random** 和 **System.Random**（C# 原生），它们的使用场景和特点各有不同。
+
+### UnityEngine.Random
+
+Unity 提供的随机数类，专为游戏场景设计，是一个**静态类**，无需实例化，全局共享一个随机状态。
+
+#### 基本属性和方法
+
+```csharp
+// ---- 属性 ----
+
+// 随机种子 —— 只写属性，设置后随机序列固定
+// 默认种子基于游戏启动时间，每次运行结果不同
+Random.seed = 12345;
+
+// 当前随机状态 —— 可保存和恢复，实现"可复现的随机"
+Random.State state = Random.state;   // 保存
+Random.state = state;                // 恢复
+
+// ---- 基本随机值 ----
+
+// 随机浮点数 —— [0.0, 1.0]（包含0和1）
+float f = Random.value;
+
+// 随机整数 —— [min, max)  整数版本不包含 max！
+int i = Random.Range(0, 10);    // 返回 0~9
+
+// 随机浮点数 —— [min, max]  浮点版本包含 max
+float f2 = Random.Range(0f, 10f); // 返回 0.0~10.0
+
+// ---- 随机旋转与方向 ----
+
+// 随机旋转（均匀分布在单位球面上）
+Quaternion randomRot = Random.rotation;
+
+// 单位球体内随机点（适合在球体范围内随机生成）
+Vector3 posInSphere = Random.insideUnitSphere;
+
+// 单位球面上随机点（表面均匀分布，适合随机方向）
+Vector3 dirOnSphere = Random.onUnitSphere;
+
+// 单位圆内随机点（XY 平面，2D 游戏常用）
+Vector2 posInCircle = Random.insideUnitCircle;
+```
+
+| 方法 | 分布区域 | 用途 |
+|------|------|------|
+| **insideUnitSphere** | 球体内部（半径1） | 爆炸碎片散射、随机生成 |
+| **onUnitSphere** | 球体表面 | 随机方向向量、环绕目标生成 |
+| **insideUnitCircle** | 圆内部（半径1） | 2D 随机位置、准星扩散 |
+| **rotation** | 均匀四元数 | 随机朝向 |
+
+> [!WARNING] Random.Range 整数与浮点数的区别
+> `Random.Range(0, 10)` 整数版返回 0~9，**不包含 10**。
+> `Random.Range(0f, 10f)` 浮点版返回 0.0~10.0，**包含 10**。
+> 这是最容易踩的坑，想取 1~10 应写 `Random.Range(1, 11)`。
+
+#### 随机颜色
+
+```csharp
+// 生成随机颜色（RGB 随机，Alpha 始终为 1）
+Color randomColor = Random.ColorHSV();
+
+// 带参数：控制色相、饱和度、明度的范围
+Color randomGreen = Random.ColorHSV(
+    0.25f, 0.45f,    // 色相范围（绿色区域）
+    0.6f, 1.0f,      // 饱和度范围
+    0.5f, 1.0f       // 明度范围
+);
+```
+
+| 色相值 | 颜色 |
+|:--:|------|
+| 0 ~ 0.15 | 红 ~ 橙 |
+| 0.15 ~ 0.25 | 橙 ~ 黄 |
+| 0.25 ~ 0.45 | 黄绿 ~ 绿 |
+| 0.45 ~ 0.65 | 绿 ~ 青 ~ 蓝 |
+| 0.65 ~ 0.85 | 蓝 ~ 紫 |
+| 0.85 ~ 1.0 | 紫 ~ 红 |
+
+#### Unity Random 注意点
+
+- **不能跨线程** —— 只能在主线程调用
+- **全局共享** —— 一个地方的调用会影响其他地方的随机结果
+- **seed 只写** —— 无法读取当前种子值
+- **state 可保存恢复** —— 适合需要可复现随机的场景
+
+---
+
+### System.Random（C# 原生）
+
+C# 的 `System.Random` 是**实例类**，每个实例拥有独立的随机序列，更灵活。
+
+```csharp
+// 创建实例
+System.Random random = new System.Random();          // 默认种子（基于时间）
+System.Random random2 = new System.Random(12345);    // 指定种子
+
+// 生成随机整数
+int i = random.Next();          // 任意非负整数
+int j = random.Next(100);       // [0, 100)
+int k = random.Next(10, 20);    // [10, 20)
+
+// 生成随机浮点数 [0.0, 1.0)
+double d = random.NextDouble();
+
+// 填充字节数组
+byte[] bytes = new byte[16];
+random.NextBytes(bytes);
+```
+
+---
+
+### 两者对比
+
+| 对比维度 | UnityEngine.Random | System.Random |
+|------|:--:|:--:|
+| 类型 | 静态类 | 实例类 |
+| 实例化 | ❌ 不需要 | ✅ 需要 `new` |
+| 线程安全 | ❌ 仅主线程 | ✅ 可跨线程 |
+| 状态隔离 | 全局共享 | 每个实例独立 |
+| 游戏功能 | ✅ 内置旋转、球体、颜色 | ❌ 需手写 |
+| Range 整数 | [min, max) | Next(min, max) [min, max) |
+| 适用场景 | 游戏逻辑 | 多线程、网络通信 |
+
+---
+
+### 使用场景示例
+
+#### 随机物品掉落
+
+```csharp
+public GameObject[] items;
+
+void DropItem(Vector3 position)
+{
+    int index = Random.Range(0, items.Length);
+    Instantiate(items[index], position, Quaternion.identity);
+}
+```
+
+#### 带权重的随机
+
+```csharp
+// 权重数组：[50, 30, 15, 5] 表示四种物品的掉落概率
+int WeightedRandom(float[] weights)
+{
+    float total = 0;
+    foreach (float w in weights) total += w;
+    
+    float point = Random.value * total;
+    for (int i = 0; i < weights.Length; i++)
+    {
+        if (point < weights[i]) return i;
+        point -= weights[i];
+    }
+    return weights.Length - 1;
+}
+```
+
+#### 可复现地图生成（利用 state）
+
+```csharp
+// 保存当前状态，用完恢复，不影响游戏其他部分的随机
+Random.State oldState = Random.state;
+Random.seed = 12345;
+
+for (int x = 0; x < width; x++)
+    for (int y = 0; y < height; y++)
+        map[x, y] = Random.Range(0, 2);
+
+Random.state = oldState; // 恢复
+```
+
+#### 洗牌算法（Fisher-Yates）
+
+```csharp
+void Shuffle<T>(T[] array)
+{
+    for (int i = array.Length - 1; i > 0; i--)
+    {
+        int j = Random.Range(0, i + 1); // i+1 因为整数 Range 不包含 max
+        (array[i], array[j]) = (array[j], array[i]); // 元组交换
+    }
+}
+```
+
+#### 随机巡逻点（利用 insideUnitCircle）
+
+```csharp
+Vector3 GetRandomPatrolPoint(Vector3 center, float radius)
+{
+    Vector2 circle = Random.insideUnitCircle * radius;
+    return center + new Vector3(circle.x, 0, circle.y);
+}
+```
+
+---
+
+### 什么时候用哪个？
+
+| 场景 | 推荐 | 原因 |
+|------|:--:|------|
+| 掉落、暴击、AI 决策 | `UnityEngine.Random` | 方便，内置游戏功能 |
+| 多线程计算 | `System.Random` | Unity Random 不支持线程 |
+| 程序化地图生成 | `UnityEngine.Random` | `state` 方便保存恢复 |
+| 网络通信种子 | `System.Random` | 独立实例，不污染全局 |
+| 密码/加密/防作弊 | `System.Security.Cryptography` | 两个 Random 都不安全 |
+
+> [!IMPORTANT] 安全提醒
+> `UnityEngine.Random` 和 `System.Random` 都**不是密码学安全的随机数生成器**。涉及密码、加密、防作弊等场景，必须使用 `System.Security.Cryptography.RandomNumberGenerator`。
+

@@ -1562,7 +1562,7 @@ Func<int,int,int> intFunc4 = MyFunc4;
 //2.委托怎么用事件就怎么用
 //事件相对于委托的区别：
 //1.不能在类外部 赋值
-//2.不能再类外部 调用
+//2.不能在类外部 调用
 //注意：它只能作为成员存在于类和接口以及结构体中
 using System;
 
@@ -2473,7 +2473,7 @@ CustomList customList = new CustomList();
 //foreach本质
 //1.先获取in后面对象的IEnumerator接口 会调用对象中的GetEnumerator方法 来获取
 //2.执行IEnumerator对象中的 MoveNext方法
-//3.只要MoveNext返回值是true 就会去得到Current 然后复制给Item
+//3.只要MoveNext返回值是true 就会去得到Current 然后赋值给Item
 foreach (var item in customList)
 {
     Console.WriteLine(item);
@@ -2720,7 +2720,7 @@ namespace Lesson
 
                     while (sortIndex >= 0 && arr[sortIndex] > noSortNum)
                     {
-                        arr[sortIndex + 1] = arr[sortIndex];
+                        arr[sortIndex + step] = arr[sortIndex];
                         sortIndex -= step;
                     }
                     arr[sortIndex + step] = noSortNum;
